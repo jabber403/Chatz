@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Chatz</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -10,16 +10,16 @@
 
         .hidden { display: none !important; }
 
-        #loginScreen { background-color: #111b21; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; }
+        #loginScreen { background-color: #111b21; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
         #loginScreen h2 { color: #00a884; margin-bottom: 20px; }
         .login-form { display: flex; flex-direction: column; gap: 12px; }
-        input, select { background-color: #2a3942; border: none; color: #d1d7db; padding: 12px; border-radius: 8px; outline: none; }
+        input, select { background-color: #2a3942; border: none; color: #d1d7db; padding: 12px; border-radius: 8px; outline: none; font-size: 1rem; }
         button { background-color: #00a884; color: #111b21; font-weight: 700; padding: 12px; border: none; border-radius: 8px; cursor: pointer; }
 
         .pfp-preview { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #00a884; margin: 0 auto 10px; background: #202c33; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; }
 
-        #appContainer { width: 100vw; height: 100vh; display: flex; background-color: #111b21; }
-        .sidebar { width: 320px; background-color: #111b21; border-right: 1px solid #222d34; display: flex; flex-direction: column; }
+        #appContainer { width: 100vw; height: 100vh; display: flex; background-color: #111b21; position: relative; }
+        .sidebar { width: 320px; background-color: #111b21; border-right: 1px solid #222d34; display: flex; flex-direction: column; height: 100%; flex-shrink: 0; }
         .sidebar-header { background-color: #202c33; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
         .user-info { display: flex; align-items: center; gap: 10px; }
         .user-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: #2a3942; display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -33,17 +33,21 @@
         .contact-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #1f2c33; }
         .contact-item.active { background-color: #2a3942; }
 
-        .chat-area { flex: 1; display: flex; flex-direction: column; background-color: #0b141a; position: relative; }
-        .chat-header { background-color: #202c33; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #222d34; }
+        .chat-area { flex: 1; display: flex; flex-direction: column; background-color: #0b141a; position: relative; height: 100%; }
+        .chat-header { background-color: #202c33; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #222d34; gap: 8px; }
         .chat-header-actions { display: flex; gap: 12px; align-items: center; }
         .call-btn { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: #00a884; }
+
+        .mobile-back-btn { display: none; background: none; border: none; color: #00a884; font-size: 1.5rem; cursor: pointer; padding-right: 8px; }
+
+        .logout-btn { background: none; border: none; color: #ea4335; font-size: 0.8rem; cursor: pointer; font-weight: bold; }
 
         .chat-body { 
             flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; 
             background-color: #0b141a; background-size: cover; background-position: center; transition: background 0.3s;
         }
 
-        .bubble { max-width: 65%; padding: 8px 12px; border-radius: 8px; font-size: 0.9rem; word-wrap: break-word; display: flex; flex-direction: column; position: relative; }
+        .bubble { max-width: 75%; padding: 8px 12px; border-radius: 8px; font-size: 0.9rem; word-wrap: break-word; display: flex; flex-direction: column; position: relative; }
         .bubble.outgoing { align-self: flex-end; background-color: #005c4b; }
         .bubble.incoming { align-self: flex-start; background-color: #202c33; }
         .sender-tag { font-size: 0.75rem; font-weight: bold; color: #e52e71; margin-bottom: 4px; }
@@ -53,6 +57,9 @@
         .tick-icon { font-size: 0.75rem; color: #8696a0; font-weight: bold; }
         .tick-icon.read { color: #53bdeb; }
 
+        .chat-img, .chat-video { max-width: 100%; max-height: 250px; border-radius: 8px; margin-top: 4px; }
+        .chat-audio { max-width: 100%; margin-top: 4px; }
+
         /* REACTION OVERLAY */
         .reaction-bar { display: none; position: absolute; top: -35px; right: 0; background: #202c33; border: 1px solid #00a884; border-radius: 20px; padding: 2px 8px; gap: 6px; z-index: 50; }
         .bubble:hover .reaction-bar { display: flex; }
@@ -60,12 +67,12 @@
         .reaction-btn:hover { transform: scale(1.3); }
         .reactions-display { display: flex; gap: 4px; font-size: 0.75rem; margin-top: 4px; background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 10px; width: fit-content; }
 
-        .chat-footer { background-color: #202c33; padding: 10px 16px; display: flex; align-items: center; gap: 10px; position: relative; }
+        .chat-footer { background-color: #202c33; padding: 10px 16px; display: flex; align-items: center; gap: 8px; position: relative; }
         .chat-footer input[type="text"] { flex: 1; background-color: #2a3942; }
 
-        /* GIF & STICKER PICKER POPUP */
+        /* MEDIA PICKER DRAWER */
         #mediaPickerDrawer {
-            position: absolute; bottom: 65px; left: 16px; width: 320px; height: 300px;
+            position: absolute; bottom: 65px; left: 16px; width: 300px; height: 260px;
             background-color: #202c33; border: 1px solid #2a3942; border-radius: 12px;
             display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100;
         }
@@ -73,11 +80,9 @@
         .picker-tab { flex: 1; padding: 8px; text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: bold; color: #8696a0; }
         .picker-tab.active { color: #00a884; border-bottom: 2px solid #00a884; }
         .picker-content { flex: 1; padding: 10px; overflow-y: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .sticker-item { font-size: 2.5rem; text-align: center; cursor: pointer; transition: transform 0.1s; }
-        .sticker-item:hover { transform: scale(1.2); }
+        .sticker-item { font-size: 2.2rem; text-align: center; cursor: pointer; }
         .gif-item { width: 100%; height: 70px; object-fit: cover; border-radius: 6px; cursor: pointer; }
 
-        /* RECORDING VOICE NOTE UI */
         .record-btn { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: #00a884; }
         .record-btn.recording { color: #ea4335; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
@@ -85,7 +90,7 @@
         #incomingCallBox {
             position: absolute; top: 20px; right: 20px; z-index: 300;
             background-color: #202c33; border: 2px solid #00a884; border-radius: 12px;
-            padding: 16px; width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            padding: 16px; width: 280px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center;
         }
         .call-actions { display: flex; gap: 10px; width: 100%; }
@@ -100,6 +105,19 @@
         }
         #jitsiContainer { width: 100%; height: 85%; }
         .call-controls { height: 15%; display: flex; align-items: center; justify-content: center; gap: 16px; }
+
+        /* MOBILE SPECIFIC STYLES */
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; }
+            .chat-area { 
+                position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+                z-index: 20; display: none; 
+            }
+            .chat-area.mobile-active { display: flex; }
+            .mobile-back-btn { display: inline-block; }
+            .bubble { max-width: 85%; }
+            #mediaPickerDrawer { width: 90%; left: 5%; }
+        }
     </style>
     <script src="https://meet.jit.si/external_api.js"></script>
 </head>
@@ -121,13 +139,16 @@
     </div>
 
     <div id="appContainer" class="hidden">
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="user-info">
                     <div class="user-avatar" id="myAvatarDisplay">👤</div>
                     <span id="myUsername" style="font-weight: 600;">Me</span>
                 </div>
-                <span style="font-size: 0.75rem; color: #00a884;">🔒 Online</span>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size: 0.75rem; color: #00a884;">🔒 Online</span>
+                    <button class="logout-btn" id="logoutBtn">Logout</button>
+                </div>
             </div>
 
             <div class="group-controls">
@@ -144,16 +165,19 @@
             </div>
         </div>
 
-        <div class="chat-area">
-            <div id="emptyView" style="flex:1; display:flex; align-items:center; justify-content:center; color:#8696a0;">
+        <div class="chat-area" id="chatArea">
+            <div id="emptyView" style="flex:1; display:flex; align-items:center; justify-content:center; color:#8696a0; padding:20px; text-align:center;">
                 Select a direct message or group room to start chatting.
             </div>
 
             <div id="activeChatView" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
                 <div class="chat-header">
-                    <div>
-                        <div id="activeContactName" style="font-weight: 600;">User</div>
-                        <div id="activeStatusSub" style="font-size: 0.75rem; color: #00a884;">🔒 Encrypted Channel</div>
+                    <div style="display:flex; align-items:center;">
+                        <button class="mobile-back-btn" id="mobileBackBtn">←</button>
+                        <div>
+                            <div id="activeContactName" style="font-weight: 600;">User</div>
+                            <div id="activeStatusSub" style="font-size: 0.75rem; color: #00a884;">🔒 Encrypted Channel</div>
+                        </div>
                     </div>
                     <div class="chat-header-actions">
                         <label title="Set Custom Background" style="cursor:pointer; font-size:1.2rem;">
@@ -217,10 +241,14 @@
 
         const myUsername = document.getElementById('myUsername');
         const myAvatarDisplay = document.getElementById('myAvatarDisplay');
+        const logoutBtn = document.getElementById('logoutBtn');
         const contactsList = document.getElementById('contactsList');
         const groupsList = document.getElementById('groupsList');
         const groupNameInput = document.getElementById('groupNameInput');
         const joinGroupBtn = document.getElementById('joinGroupBtn');
+
+        const chatArea = document.getElementById('chatArea');
+        const mobileBackBtn = document.getElementById('mobileBackBtn');
 
         const emptyView = document.getElementById('emptyView');
         const activeChatView = document.getElementById('activeChatView');
@@ -252,6 +280,7 @@
         const videoCallBtn = document.getElementById('videoCallBtn');
 
         let currentUser = "";
+        let currentPassword = "";
         let currentPfp = "👤";
         let activeTarget = null;
         let isGroupChat = false;
@@ -264,7 +293,6 @@
         let selectedFileName = "";
         let selectedFileType = "";
 
-        // Voice Recording Vars
         let mediaRecorder = null;
         let audioChunks = [];
         let isRecording = false;
@@ -275,6 +303,20 @@
             'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDdxMnRzNHU3eDRjYmVqcncybmhyMXpncHRvNmRrcXR3OTI5c3V2OCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKsjRrfIPjeiVyM/giphy.gif',
             'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExc2J1bjNsc3B6bWFndXByenR1am96aGVidDRiZHFlZXRkMmdyM2tzMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l41K3o5TKSFi88C5O/giphy.gif'
         ];
+
+        // AUTO LOGIN PERSISTENCE CHECK
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedUser = localStorage.getItem('chatz_saved_session');
+            if (savedUser) {
+                try {
+                    const parsed = JSON.parse(savedUser);
+                    currentUser = parsed.username;
+                    currentPassword = parsed.password;
+                    currentPfp = parsed.pfp || "👤";
+                    socket.emit('login', { username: currentUser, password: currentPassword, pfp: currentPfp });
+                } catch(e) {}
+            }
+        });
 
         pfpFileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -306,7 +348,6 @@
             }
         });
 
-        // STICKER & GIF PICKER UI
         togglePickerBtn.onclick = () => {
             mediaPickerDrawer.classList.toggle('hidden');
             loadStickers();
@@ -354,7 +395,6 @@
             });
         }
 
-        // VOICE NOTE RECORDING LOGIC
         voiceRecordBtn.onclick = async () => {
             if (!isRecording) {
                 try {
@@ -413,7 +453,8 @@
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             currentUser = usernameInput.value.trim();
-            socket.emit('login', { username: currentUser, password: passwordInput.value, pfp: currentPfp });
+            currentPassword = passwordInput.value;
+            socket.emit('login', { username: currentUser, password: currentPassword, pfp: currentPfp });
         });
 
         socket.on('loginResponse', (res) => {
@@ -424,10 +465,26 @@
                 } else {
                     myAvatarDisplay.textContent = currentPfp;
                 }
+
+                // SAVE SESSION
+                localStorage.setItem('chatz_saved_session', JSON.stringify({
+                    username: currentUser,
+                    password: currentPassword,
+                    pfp: currentPfp
+                }));
+
                 loginScreen.classList.add('hidden');
                 appContainer.classList.remove('hidden');
-            } else alert(res.msg);
+            } else {
+                alert(res.msg);
+                localStorage.removeItem('chatz_saved_session');
+            }
         });
+
+        logoutBtn.onclick = () => {
+            localStorage.removeItem('chatz_saved_session');
+            window.location.reload();
+        };
 
         joinGroupBtn.onclick = () => {
             const roomName = groupNameInput.value.trim();
@@ -485,9 +542,15 @@
             activeChatView.classList.remove('hidden');
             chatBody.innerHTML = '';
 
+            chatArea.classList.add('mobile-active');
+
             renderGroupsList();
             socket.emit('loadConversation', { target, isGroup: isGroupChat });
         }
+
+        mobileBackBtn.onclick = () => {
+            chatArea.classList.remove('mobile-active');
+        };
 
         messageInput.addEventListener('input', () => {
             if (!activeTarget) return;
@@ -622,8 +685,6 @@
 
             if (isGroupChat && !isOutgoing) {
                 bodyContent += `<div class="sender-tag">${data.sender}</div>`;
-            } else if (!isGroupChat) {
-                bodyContent += `<div class="enc-badge">🔒 Encrypted</div>`;
             }
 
             if (data.decryptedMessage) {
@@ -633,7 +694,7 @@
             if (data.fileData) {
                 const type = data.fileType || '';
                 if (type === 'sticker') {
-                    bodyContent += `<div style="font-size: 4rem; text-align: center;">${data.fileData}</div>`;
+                    bodyContent += `<div style="font-size: 3.5rem; text-align: center;">${data.fileData}</div>`;
                 } else if (type.startsWith('image/')) {
                     bodyContent += `<img src="${data.fileData}" class="chat-img" />`;
                 } else if (type.startsWith('video/')) {
@@ -641,7 +702,7 @@
                 } else if (type.startsWith('audio/')) {
                     bodyContent += `<audio src="${data.fileData}" controls class="chat-audio"></audio>`;
                 } else {
-                    bodyContent += `<a href="${data.fileData}" download="${data.fileName || 'download'}" class="file-link">💾 Download ${data.fileName || 'File'}</a>`;
+                    bodyContent += `<a href="${data.fileData}" download="${data.fileName || 'download'}" style="color:#38bdf8;">💾 Download ${data.fileName || 'File'}</a>`;
                 }
             }
 
