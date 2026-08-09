@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>WhatsApp Chatz</title>
+    <script src="https://8x8.vc/vpaas-magic-cookie-e89e2e4074c54ea58c423a0977fe348f/external_api.js" async></script>
     <style>
-        /* Base Reset & CSS Variables */
+        /* Base Reset & Mobile Viewport CSS Variables */
         :root {
             --bg-dark: #0c1317;
             --panel-bg: #111b21;
@@ -30,14 +31,16 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        body {
+        html, body {
+            height: 100%;
+            height: 100dvh; /* Dynamic viewport height fix for mobile browsers */
+            width: 100%;
             background-color: var(--bg-dark);
             color: var(--text-primary);
-            height: 100vh;
+            overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
         }
 
         .hidden { display: none !important; }
@@ -45,31 +48,33 @@
         /* Login Screen Modal */
         #loginScreen {
             background-color: var(--panel-bg);
-            padding: 35px 30px;
+            padding: 24px 20px;
             border-radius: 12px;
             width: 90%;
-            max-width: 420px;
+            max-width: 400px;
             text-align: center;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             z-index: 1000;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         #loginScreen h2 {
             color: var(--accent-green);
-            margin-bottom: 8px;
-            font-size: 1.8rem;
+            margin-bottom: 6px;
+            font-size: 1.6rem;
         }
 
         #loginScreen p {
             color: var(--text-muted);
             font-size: 0.85rem;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .login-form {
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 12px;
         }
 
         input, select {
@@ -81,6 +86,7 @@
             outline: none;
             font-size: 0.95rem;
             transition: border-color 0.2s;
+            width: 100%;
         }
 
         input:focus {
@@ -104,27 +110,29 @@
         }
 
         .pfp-preview {
-            width: 70px;
-            height: 70px;
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
             border: 2px solid var(--accent-green);
-            margin: 0 auto 12px;
+            margin: 0 auto 10px;
             background: var(--header-bg);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.2rem;
+            font-size: 2rem;
             overflow: hidden;
             object-fit: cover;
         }
 
-        /* App Container & Main Layout */
+        /* App Container Layout */
         #appContainer {
             width: 100vw;
             height: 100vh;
+            height: 100dvh;
             display: flex;
             background-color: var(--panel-bg);
             position: relative;
+            overflow: hidden;
         }
 
         .sidebar {
@@ -134,32 +142,34 @@
             display: flex;
             flex-direction: column;
             z-index: 10;
+            height: 100%;
         }
 
         .sidebar-header {
             background-color: var(--header-bg);
-            padding: 12px 16px;
+            padding: 10px 14px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            min-height: 60px;
         }
 
         .user-info {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         .user-avatar {
-            width: 40px;
-            height: 40px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             background: var(--input-bg);
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
         }
 
         .user-avatar img {
@@ -171,7 +181,7 @@
         .sidebar-actions {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .icon-btn {
@@ -203,7 +213,7 @@
         }
 
         .group-controls {
-            padding: 12px;
+            padding: 10px 12px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
             display: flex;
             gap: 8px;
@@ -217,7 +227,7 @@
         }
 
         .group-controls button {
-            padding: 8px 14px;
+            padding: 8px 12px;
             font-size: 0.85rem;
             white-space: nowrap;
         }
@@ -225,11 +235,12 @@
         .contacts-list {
             flex: 1;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .section-header {
-            padding: 10px 16px;
-            font-size: 0.75rem;
+            padding: 8px 14px;
+            font-size: 0.72rem;
             text-transform: uppercase;
             color: var(--text-muted);
             font-weight: 700;
@@ -244,7 +255,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px 16px;
+            padding: 12px 14px;
             cursor: pointer;
             border-bottom: 1px solid rgba(255, 255, 255, 0.03);
             transition: background 0.15s;
@@ -293,21 +304,23 @@
             flex-direction: column;
             background-color: var(--bg-dark);
             position: relative;
+            height: 100%;
         }
 
         .chat-header {
             background-color: var(--header-bg);
-            padding: 10px 16px;
+            padding: 10px 14px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             z-index: 5;
+            min-height: 60px;
         }
 
         .chat-header-actions {
             display: flex;
-            gap: 12px;
+            gap: 8px;
             align-items: center;
         }
 
@@ -334,16 +347,18 @@
             color: var(--accent-green);
             font-size: 1.4rem;
             cursor: pointer;
-            margin-right: 10px;
+            margin-right: 8px;
+            padding: 4px;
         }
 
         .chat-body {
             flex: 1;
-            padding: 18px;
+            padding: 14px;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
             background-color: var(--bg-dark);
             background-size: cover;
             background-position: center;
@@ -351,7 +366,7 @@
 
         /* Message Bubbles */
         .bubble {
-            max-width: 70%;
+            max-width: 82%;
             padding: 8px 12px;
             border-radius: 8px;
             font-size: 0.92rem;
@@ -413,14 +428,15 @@
 
         .chat-img, .chat-video {
             max-width: 100%;
-            max-height: 280px;
+            max-height: 250px;
             border-radius: 8px;
             margin-top: 4px;
             object-fit: contain;
         }
 
         .chat-audio {
-            width: 240px;
+            width: 100%;
+            max-width: 240px;
             margin-top: 6px;
         }
 
@@ -436,13 +452,13 @@
         .reaction-bar {
             display: none;
             position: absolute;
-            top: -36px;
+            top: -34px;
             right: 0;
             background: var(--header-bg);
             border: 1px solid var(--accent-green);
             border-radius: 20px;
-            padding: 3px 10px;
-            gap: 8px;
+            padding: 3px 8px;
+            gap: 6px;
             z-index: 50;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
         }
@@ -451,11 +467,11 @@
 
         .reaction-btn {
             cursor: pointer;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             transition: transform 0.15s;
         }
 
-        .reaction-btn:hover { transform: scale(1.35); }
+        .reaction-btn:hover { transform: scale(1.3); }
 
         .reactions-display {
             display: flex;
@@ -473,7 +489,7 @@
             background-color: rgba(234, 67, 53, 0.15);
             border: 1px solid var(--danger-red);
             color: #ff8b8b;
-            padding: 10px 16px;
+            padding: 10px 14px;
             text-align: center;
             font-size: 0.85rem;
             display: flex;
@@ -492,10 +508,10 @@
         /* Footer Input Section */
         .chat-footer {
             background-color: var(--header-bg);
-            padding: 10px 16px;
+            padding: 8px 12px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             position: relative;
         }
 
@@ -503,16 +519,18 @@
             flex: 1;
             background-color: var(--input-bg);
             border-radius: 20px;
-            padding: 10px 16px;
+            padding: 10px 14px;
+            font-size: 0.9rem;
         }
 
-        /* Sticker & GIF Drawer */
+        /* Sticker & GIF Drawer Responsive */
         #mediaPickerDrawer {
             position: absolute;
-            bottom: 65px;
-            left: 16px;
-            width: 340px;
-            height: 320px;
+            bottom: 60px;
+            left: 10px;
+            width: calc(100% - 20px);
+            max-width: 340px;
+            height: 300px;
             background-color: var(--header-bg);
             border: 1px solid var(--input-bg);
             border-radius: 12px;
@@ -546,26 +564,27 @@
 
         .picker-content {
             flex: 1;
-            padding: 12px;
+            padding: 10px;
             overflow-y: auto;
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
+            gap: 8px;
+            -webkit-overflow-scrolling: touch;
         }
 
         .sticker-item {
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             text-align: center;
             cursor: pointer;
             transition: transform 0.15s;
             user-select: none;
         }
 
-        .sticker-item:hover { transform: scale(1.25); }
+        .sticker-item:hover { transform: scale(1.2); }
 
         .gif-item {
             width: 100%;
-            height: 75px;
+            height: 70px;
             object-fit: cover;
             border-radius: 6px;
             cursor: pointer;
@@ -580,6 +599,7 @@
             font-size: 1.3rem;
             cursor: pointer;
             color: var(--accent-green);
+            padding: 4px;
         }
 
         .record-btn.recording {
@@ -593,21 +613,23 @@
             100% { opacity: 1; }
         }
 
-        /* Call Popups */
+        /* Call Popups & WebRTC Overlay */
         #incomingCallBox {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 16px;
+            right: 16px;
+            left: 16px;
+            margin: 0 auto;
+            max-width: 320px;
             z-index: 300;
             background-color: var(--header-bg);
             border: 2px solid var(--accent-green);
             border-radius: 12px;
-            padding: 18px;
-            width: 310px;
+            padding: 16px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 12px;
             align-items: center;
             text-align: center;
         }
@@ -627,36 +649,56 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
             background: rgba(11, 20, 26, 0.98);
             z-index: 200;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
         }
 
-        #jitsiContainer { width: 100%; height: 88%; }
+        #jaas-container { 
+            width: 100%; 
+            height: calc(100% - 60px); 
+        }
 
         .call-controls {
-            height: 12%;
+            height: 60px;
+            width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 16px;
+            background: var(--header-bg);
         }
 
+        /* Responsive Mobile Layout Adjustments */
         @media (max-width: 768px) {
-            .sidebar { width: 100%; }
-            .chat-area { width: 100%; }
-            .back-btn { display: inline-block; }
-            #appContainer.chat-active .sidebar { display: none; }
-            #appContainer.chat-active .chat-area { display: flex; }
-            #appContainer:not(.chat-active) .chat-area { display: none; }
+            .sidebar { 
+                width: 100%; 
+            }
+            .chat-area { 
+                width: 100%; 
+            }
+            .back-btn { 
+                display: inline-block; 
+            }
+            #appContainer.chat-active .sidebar { 
+                display: none; 
+            }
+            #appContainer.chat-active .chat-area { 
+                display: flex; 
+            }
+            #appContainer:not(.chat-active) .chat-area { 
+                display: none; 
+            }
+            .bubble {
+                max-width: 88%;
+            }
         }
     </style>
-    <script src="https://meet.jit.si/external_api.js"></script>
 </head>
 <body>
 
@@ -704,22 +746,22 @@
         </div>
 
         <div class="chat-area">
-            <div id="emptyView" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--text-muted); gap:10px;">
+            <div id="emptyView" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--text-muted); gap:10px; padding:20px; text-align:center;">
                 <span style="font-size: 3rem;">💬</span>
                 <p>Select a direct contact or join a group room to start chatting.</p>
             </div>
 
             <div id="activeChatView" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
                 <div class="chat-header">
-                    <div style="display: flex; align-items: center;">
+                    <div style="display: flex; align-items: center; overflow: hidden;">
                         <button class="back-btn" id="backToSidebarBtn">←</button>
-                        <div>
-                            <div id="activeContactName" style="font-weight: 600;">User</div>
-                            <div id="activeStatusSub" style="font-size: 0.75rem; color: var(--accent-green);">🔒 Encrypted Channel</div>
+                        <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            <div id="activeContactName" style="font-weight: 600; text-overflow: ellipsis; overflow: hidden;">User</div>
+                            <div id="activeStatusSub" style="font-size: 0.72rem; color: var(--accent-green); text-overflow: ellipsis; overflow: hidden;">🔒 Encrypted Channel</div>
                         </div>
                     </div>
                     <div class="chat-header-actions">
-                        <label title="Set Custom Background" style="cursor:pointer; font-size:1.2rem;">
+                        <label title="Set Custom Background" style="cursor:pointer; font-size:1.2rem; padding: 4px;">
                             🎨 <input type="file" id="bgFileInput" accept="image/*" style="display:none;">
                         </label>
                         <button class="call-btn" id="audioCallBtn" title="Audio Call">📞</button>
@@ -729,7 +771,7 @@
                 </div>
 
                 <div id="blockedBanner" class="hidden">
-                    <span>You have blocked this contact. You cannot send or receive messages.</span>
+                    <span>Contact blocked.</span>
                     <button id="unblockBannerBtn">Unblock</button>
                 </div>
 
@@ -745,17 +787,17 @@
 
                 <form id="chatForm" class="chat-footer">
                     <button type="button" id="togglePickerBtn" style="background:none; border:none; font-size:1.3rem; cursor:pointer;" title="Stickers & GIFs">👾</button>
-                    <label style="cursor:pointer; font-size:1.2rem;" title="Attach File">
+                    <label style="cursor:pointer; font-size:1.2rem; padding:2px;" title="Attach File">
                         📎 <input type="file" id="fileInput" style="display:none;">
                     </label>
                     <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off">
                     <button type="button" class="record-btn" id="voiceRecordBtn" title="Record Voice Note">🎙️</button>
-                    <button type="submit" style="border-radius: 50%; width:42px; height:42px; display:flex; align-items:center; justify-content:center;">➤</button>
+                    <button type="submit" style="border-radius: 50%; width:40px; height:40px; min-width:40px; display:flex; align-items:center; justify-content:center; padding:0;">➤</button>
                 </form>
             </div>
 
             <div id="incomingCallBox" class="hidden">
-                <div id="incomingCallText" style="font-weight: bold;">Incoming Call...</div>
+                <div id="incomingCallText" style="font-weight: bold; font-size: 0.95rem;">Incoming Call...</div>
                 <div class="call-actions">
                     <button id="acceptIncomingCallBtn" class="btn-success">Accept</button>
                     <button id="declineIncomingCallBtn" class="btn-danger">Decline</button>
@@ -763,9 +805,9 @@
             </div>
 
             <div id="callOverlay" class="hidden">
-                <div id="jitsiContainer"></div>
+                <div id="jaas-container"></div>
                 <div class="call-controls">
-                    <button id="endCallBtn" class="btn-danger">End Call</button>
+                    <button id="endCallBtn" class="btn-danger" style="padding: 10px 24px;">End Call</button>
                 </div>
             </div>
         </div>
@@ -823,7 +865,7 @@
         const declineIncomingCallBtn = document.getElementById('declineIncomingCallBtn');
 
         const callOverlay = document.getElementById('callOverlay');
-        const jitsiContainer = document.getElementById('jitsiContainer');
+        const jaasContainer = document.getElementById('jaas-container');
         const endCallBtn = document.getElementById('endCallBtn');
         const audioCallBtn = document.getElementById('audioCallBtn');
         const videoCallBtn = document.getElementById('videoCallBtn');
@@ -856,7 +898,6 @@
             '🥳', '😴', '🤯', '🤩', '😇', '🙈', '🙉', '🙊', '☠️', '👽', '🤡', '👹'
         ];
 
-        // LIST YOUR LOCAL GIF FILE NAMES HERE FROM YOUR 'gifs' FOLDER
         const LOCAL_GIF_FILES = [
             'gif1.gif',
             'gif2.gif',
@@ -880,7 +921,7 @@
             }
         });
 
-        /* Safe Alert Audio for Mobile */
+        /* Safe Audio Alerts for Mobile */
         function playAlertSound() {
             try {
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -906,12 +947,9 @@
 
                 osc.start();
                 osc.stop(ctx.currentTime + 0.25);
-            } catch(e) {
-                console.log('Audio playback ignored by browser policy');
-            }
+            } catch(e) {}
         }
 
-        /* Mobile-Safe Notifications */
         function requestNotificationPermission() {
             try {
                 if ("Notification" in window && Notification.permission !== "granted") {
@@ -920,7 +958,7 @@
                             enableNotifBtn.textContent = "🔔 Alerts Active";
                             enableNotifBtn.style.color = "var(--accent-green)";
                         }
-                    }).catch(err => console.log('Notification permission denied or blocked'));
+                    }).catch(err => {});
                 }
             } catch(e) {}
         }
@@ -941,7 +979,7 @@
             } catch(e) {}
         }
 
-        /* Encryption */
+        /* Encryption Helpers */
         function encryptDecrypt(text, keyString) {
             let result = '';
             for (let i = 0; i < text.length; i++) {
@@ -965,7 +1003,7 @@
             return [userA, userB].sort().join('-chatz-secure-key-2026');
         }
 
-        /* Profile Picture & Background Image Resizing */
+        /* Profile & Background Image Compression */
         pfpFileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
@@ -1042,7 +1080,6 @@
             });
         }
 
-        // LOAD LOCAL GIFS FROM THE gifs/ FOLDER
         function loadGifs() {
             pickerContent.innerHTML = '';
             pickerContent.style.gridTemplateColumns = 'repeat(2, 1fr)';
@@ -1052,7 +1089,7 @@
                 img.src = gifPath;
                 img.classList.add('gif-item');
                 img.onerror = () => {
-                    img.style.display = 'none'; // Hide if file not found in gifs folder yet
+                    img.style.display = 'none';
                 };
                 img.onclick = () => {
                     sendDirectPayload('', gifPath, 'image/gif', fileName);
@@ -1062,7 +1099,7 @@
             });
         }
 
-        /* Voice Notes */
+        /* Voice Recording */
         voiceRecordBtn.onclick = async () => {
             if (!isRecording) {
                 try {
@@ -1085,7 +1122,7 @@
                     voiceRecordBtn.classList.add('recording');
                     voiceRecordBtn.title = "Click to Stop and Send";
                 } catch(e) {
-                    alert('Microphone permission is required to record voice notes.');
+                    alert('Microphone permission required.');
                 }
             } else {
                 mediaRecorder.stop();
@@ -1095,7 +1132,7 @@
             }
         };
 
-        /* Login & Sessions */
+        /* Authentication & Login */
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             currentUser = usernameInput.value.trim();
@@ -1147,14 +1184,14 @@
             location.reload();
         });
 
-        /* Blocking */
+        /* Blocking Features */
         blockToggleBtn.onclick = () => {
             if (!activeTarget || isGroupChat) return;
 
             if (blockedUsers.has(activeTarget)) {
                 socket.emit('unblockUser', activeTarget);
             } else {
-                if (confirm(`Are you sure you want to block ${activeTarget}?`)) {
+                if (confirm(`Block ${activeTarget}?`)) {
                     socket.emit('blockUser', activeTarget);
                 }
             }
@@ -1190,6 +1227,7 @@
             }
         }
 
+        /* Group Chat Joining */
         joinGroupBtn.onclick = () => {
             const roomName = groupNameInput.value.trim();
             if (roomName) {
@@ -1248,7 +1286,7 @@
 
                     item.innerHTML = `
                         ${avatarHtml}
-                        <div style="flex:1;"><b>${user.username}</b></div>
+                        <div style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><b>${user.username}</b></div>
                         ${blockBadgeHtml}
                         ${badgeHtml}
                         <span class="status-dot ${statusClass}" title="${statusText}"></span>
@@ -1275,7 +1313,7 @@
             }
 
             activeContactName.textContent = isGroupChat ? `#${target}` : target;
-            activeStatusSub.textContent = isGroupChat ? '👥 Public Group Room' : '🔒 End-to-End Encrypted Direct Channel';
+            activeStatusSub.textContent = isGroupChat ? '👥 Public Group Room' : '🔒 End-to-End Encrypted Channel';
 
             emptyView.classList.add('hidden');
             activeChatView.classList.remove('hidden');
@@ -1289,7 +1327,7 @@
             socket.emit('loadConversation', { target, isGroup: isGroupChat });
         }
 
-        /* Typing Indicators */
+        /* Typing Status */
         messageInput.addEventListener('input', () => {
             if (!activeTarget) return;
 
@@ -1307,7 +1345,7 @@
                     activeStatusSub.textContent = `💬 ${data.from} is typing...`;
                     activeStatusSub.style.color = '#38bdf8';
                 } else {
-                    activeStatusSub.textContent = isGroupChat ? '👥 Public Group Room' : '🔒 End-to-End Encrypted Direct Channel';
+                    activeStatusSub.textContent = isGroupChat ? '👥 Public Group Room' : '🔒 End-to-End Encrypted Channel';
                     activeStatusSub.style.color = 'var(--accent-green)';
                 }
             }
@@ -1317,7 +1355,7 @@
             alert(data.text);
         });
 
-        /* File Sending */
+        /* File Transfers */
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
@@ -1369,7 +1407,7 @@
             }
         });
 
-        /* Message Handling */
+        /* Rendering Message Streams */
         socket.on('conversationHistory', (data) => {
             if (data.target === activeTarget) {
                 chatBody.innerHTML = '';
@@ -1464,7 +1502,7 @@
             if (data.fileData) {
                 const type = data.fileType || '';
                 if (type === 'sticker') {
-                    bodyContent += `<div style="font-size: 4.5rem; text-align: center;">${data.fileData}</div>`;
+                    bodyContent += `<div style="font-size: 4rem; text-align: center;">${data.fileData}</div>`;
                 } else if (type.startsWith('image/')) {
                     bodyContent += `<img src="${data.fileData}" class="chat-img" />`;
                 } else if (type.startsWith('video/')) {
@@ -1510,7 +1548,7 @@
             socket.emit('addReaction', { msgId, emoji, target: activeTarget, isGroup: isGroupChat });
         };
 
-        /* Calls */
+        /* 8x8 JaaS WebRTC Call Handler */
         function launchCall(startWithAudioOnly) {
             if (!activeTarget) return;
 
@@ -1519,31 +1557,39 @@
                 return;
             }
 
-            const callRoomName = isGroupChat 
-                ? `chatz-group-${activeTarget.toLowerCase().replace(/[^a-z0-9]/g, '')}`
-                : `chatz-dm-${[currentUser, activeTarget].sort().join('-')}`;
+            // Generate JaaS specific room path under your magic cookie tenant space
+            const roomSuffix = isGroupChat 
+                ? `group-${activeTarget.toLowerCase().replace(/[^a-z0-9]/g, '')}`
+                : `dm-${[currentUser, activeTarget].sort().join('-')}`;
+            
+            const jaasRoomName = `vpaas-magic-cookie-e89e2e4074c54ea58c423a0977fe348f/${roomSuffix}`;
 
             socket.emit('startCallNotification', {
                 target: activeTarget,
                 isGroup: isGroupChat,
-                callRoomName,
+                callRoomName: jaasRoomName,
                 isAudioOnly: startWithAudioOnly
             });
 
-            joinJitsiRoom(callRoomName, startWithAudioOnly);
+            join8x8JaasRoom(jaasRoomName, startWithAudioOnly);
         }
 
-        function joinJitsiRoom(callRoomName, startWithAudioOnly) {
+        function join8x8JaasRoom(callRoomName, startWithAudioOnly) {
             callOverlay.classList.remove('hidden');
             incomingCallBox.classList.add('hidden');
-            jitsiContainer.innerHTML = '';
+            jaasContainer.innerHTML = '';
 
-            const domain = 'meet.jit.si';
+            if (typeof JitsiMeetExternalAPI === 'undefined') {
+                alert('8x8 Video SDK is still loading, please try again in a moment.');
+                callOverlay.classList.add('hidden');
+                return;
+            }
+
             const options = {
                 roomName: callRoomName,
                 width: '100%',
                 height: '100%',
-                parentNode: jitsiContainer,
+                parentNode: jaasContainer,
                 userInfo: { displayName: currentUser },
                 configOverwrite: {
                     startAudioOnly: startWithAudioOnly,
@@ -1561,7 +1607,8 @@
                 }
             };
 
-            jitsiApi = new JitsiMeetExternalAPI(domain, options);
+            // Instantiate JaaS WebRTC Call API on 8x8.vc domain
+            jitsiApi = new JitsiMeetExternalAPI("8x8.vc", options);
 
             const iframe = jitsiApi.getIFrame();
             if (iframe) {
@@ -1589,7 +1636,7 @@
 
         acceptIncomingCallBtn.onclick = () => {
             if (currentIncomingCall) {
-                joinJitsiRoom(currentIncomingCall.callRoomName, currentIncomingCall.isAudioOnly);
+                join8x8JaasRoom(currentIncomingCall.callRoomName, currentIncomingCall.isAudioOnly);
             }
         };
 
@@ -1615,7 +1662,7 @@
             }
             callOverlay.classList.add('hidden');
             incomingCallBox.classList.add('hidden');
-            jitsiContainer.innerHTML = '';
+            jaasContainer.innerHTML = '';
         }
 
         audioCallBtn.onclick = () => launchCall(true);
