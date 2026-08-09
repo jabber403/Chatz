@@ -25,16 +25,18 @@ const db = new sqlite3.Database('./chat.db', (err) => {
 
 db.run('PRAGMA journal_mode = WAL;');
 
-// Database Schema Initialization
+// Database Schema Initialization with Safe Migration Support
 db.serialize(() => {
-    // Users table with session token support for persistent auto-login
+    // Base Users Table
     db.run(`CREATE TABLE IF NOT EXISTS users (
         username TEXT PRIMARY KEY, 
         password TEXT NOT NULL, 
-        pfp TEXT DEFAULT '👤',
-        session_token TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        pfp TEXT DEFAULT '👤'
     )`);
+
+    // Safely add missing columns for pre-existing chat.db files
+    db.run(`ALTER TABLE users ADD COLUMN session_token TEXT`, () => {});
+    db.run(`ALTER TABLE users ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP`, () => {});
 
     // Messages table supporting E2E, media, reactions, status tracking
     db.run(`CREATE TABLE IF NOT EXISTS messages (
@@ -118,7 +120,6 @@ function broadcastUserDirectory() {
     db.all('SELECT username, pfp FROM users', [], (err, rows) => {
         if (err || !rows) return;
 
-        // Iterate through connected sockets to send personalized lists (taking blocking into account)
         io.sockets.sockets.forEach((targetSocket) => {
             if (!targetSocket.username) return;
 
@@ -134,7 +135,7 @@ function broadcastUserDirectory() {
                         return {
                             username: u.username,
                             pfp: u.pfp || '👤',
-                            online: hasBlockedSelf ? false : isOnline, // Hide online status if they blocked us
+                            online: hasBlockedSelf ? false : isOnline,
                             isBlocked: isBlockedBySelf
                         };
                     });
@@ -230,19 +231,16 @@ io.on('connection', (socket) => {
         socket.username = user;
         socket.pfp = userPfp;
 
-        // Register socket in online users map
         if (!onlineUsers.has(user)) {
             onlineUsers.set(user, new Set());
         }
         onlineUsers.get(user).add(socket.id);
         socket.join(`user:${user}`);
 
-        // Automatically rejoin all saved groups
         db.all('SELECT room FROM group_members WHERE username = ?', [user], (err, rows) => {
             const groups = rows ? rows.map(r => r.room) : [];
             groups.forEach(g => socket.join(g));
 
-            // Mark offline messages pending for this user as 'delivered'
             db.run(`UPDATE messages SET status = 'delivered' WHERE recipient = ? AND status = 'sent'`, [user], () => {
                 fetchUnreadCounts(user, (unreadMap) => {
                     getBlockedList(user, (blockedList) => {
@@ -317,7 +315,6 @@ io.on('connection', (socket) => {
                 }
             });
         } else {
-            // Check blocking status before displaying conversation history
             isBlockedRelationship(socket.username, target, (blocked) => {
                 const query = `
                     SELECT id, sender, recipient, room, message, fileData, fileName, fileType, status, reactions, strftime('%H:%M', timestamp, 'localtime') as time 
@@ -344,7 +341,6 @@ io.on('connection', (socket) => {
         const recipient = data.recipient || null;
         const room = data.room || null;
 
-        // If direct message, check if either party blocked the other
         if (recipient) {
             isBlockedRelationship(socket.username, recipient, (blocked) => {
                 if (blocked) {
