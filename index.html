@@ -3,13 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>WhatsApp Chatz - Enterprise Ultimate Edition</title>
+    <meta name="description" content="WhatsApp Chatz Enterprise Global Messaging Client Engine">
+    <meta name="author" content="Chatz Global Engineering">
+    <title>WhatsApp Chatz - Enterprise Application Suite</title>
+    
     <script src="https://8x8.vc/vpaas-magic-cookie-e89e2e4074c54ea58c423a0977fe348f/external_api.js" async></script>
+
     <style>
         /* ==========================================================================
-           1. COMPREHENSIVE CSS DESIGN SYSTEM & THEMING ENGINE (Lines 10 - 250)
+           SECTION 2: CSS GLOBAL RESET & VARIABLES
            ========================================================================== */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
         :root {
+            /* Color Palette - Dark Theme (Default) */
             --bg-dark: #0c1317;
             --panel-bg: #111b21;
             --header-bg: #202c33;
@@ -25,23 +40,36 @@
             --danger-red: #ea4335;
             --warning-orange: #f59e0b;
             --border-color: rgba(255, 255, 255, 0.08);
-            --modal-overlay: rgba(11, 20, 26, 0.85);
+            --modal-overlay: rgba(11, 20, 26, 0.88);
             --drawer-bg: #182229;
             --badge-bg: #00a884;
             --badge-text: #111b21;
+            
+            /* Elevation & Shadows */
             --shadow-soft: 0 2px 5px rgba(0,0,0,0.3);
             --shadow-hard: 0 10px 30px rgba(0,0,0,0.6);
+            --shadow-glow: 0 0 15px rgba(0, 168, 132, 0.3);
+
+            /* Geometry & Layout */
+            --radius-xs: 2px;
             --radius-sm: 4px;
             --radius-md: 8px;
             --radius-lg: 16px;
+            --radius-xl: 24px;
             --radius-full: 9999px;
+
+            /* Typography */
             --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+            
+            /* Motion Transitions */
             --transition-fast: 0.15s ease;
             --transition-normal: 0.25s ease;
+            --transition-slow: 0.4s ease;
         }
 
-        /* Light Mode Theme Overrides */
-        body.light-theme {
+        /* Light Theme Variant */
+        body.theme-light {
             --bg-dark: #efeae2;
             --panel-bg: #ffffff;
             --header-bg: #f0f2f5;
@@ -55,79 +83,114 @@
             --text-secondary: #8696a0;
             --border-color: rgba(0, 0, 0, 0.08);
             --drawer-bg: #f7f8fa;
+            --shadow-soft: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-hard: 0 8px 24px rgba(0,0,0,0.15);
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: var(--font-main);
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
+        /* Cyberpunk Neon Theme Variant */
+        body.theme-cyberpunk {
+            --bg-dark: #0d0221;
+            --panel-bg: #0f0826;
+            --header-bg: #1b0a3d;
+            --input-bg: #2b1055;
+            --accent-green: #ff007f;
+            --accent-green-hover: #d00068;
+            --bubble-out: #540d6e;
+            --bubble-in: #1f0c38;
+            --text-primary: #00f5d4;
+            --text-muted: #7b5ea7;
+            --text-secondary: #9f7aea;
+            --blue-tick: #00f5d4;
+            --border-color: rgba(255, 0, 127, 0.25);
+            --drawer-bg: #150730;
+            --shadow-glow: 0 0 18px rgba(255, 0, 127, 0.4);
         }
 
-        input, textarea, [contenteditable="true"] {
-            user-select: text !important;
+        /* AMOLED Pitch Black Theme Variant */
+        body.theme-amoled {
+            --bg-dark: #000000;
+            --panel-bg: #050505;
+            --header-bg: #0a0a0a;
+            --input-bg: #141414;
+            --accent-green: #0d9263;
+            --accent-green-hover: #0a734e;
+            --bubble-out: #0d3827;
+            --bubble-in: #121212;
+            --text-primary: #ffffff;
+            --text-muted: #666666;
+            --border-color: #1a1a1a;
+            --drawer-bg: #080808;
         }
 
-        html, body {
+        /* ==========================================================================
+           SECTION 3: BASE DOCUMENT STYLES
+           ========================================================================== */
+        html {
+            height: 100%;
+            width: 100%;
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        body {
             height: 100%;
             height: 100dvh;
             width: 100%;
             background-color: var(--bg-dark);
             color: var(--text-primary);
+            font-family: var(--font-main);
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        .hidden { display: none !important; }
+        input, 
+        textarea, 
+        [contenteditable="true"] {
+            user-select: text !important;
+            font-family: inherit;
+        }
 
-        /* Custom Scrollbars */
+        .hidden {
+            display: none !important;
+        }
+
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
         }
+
         ::-webkit-scrollbar-track {
             background: transparent;
         }
+
         ::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.16);
             border-radius: var(--radius-full);
         }
-        body.light-theme ::-webkit-scrollbar-thumb {
-            background: rgba(0, 0, 0, 0.2);
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.28);
         }
 
-        /* Common Layouts */
-        .flex-center {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .flex-between {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .flex-col {
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Typography */
+        /* ==========================================================================
+           SECTION 4: CORE TYPOGRAPHY & BUTTON STYLES
+           ========================================================================== */
         h1, h2, h3, h4, h5, h6 {
             font-weight: 600;
             color: var(--text-primary);
+            letter-spacing: -0.2px;
         }
+
         p {
             font-size: 0.9rem;
             color: var(--text-muted);
-            line-height: 1.4;
+            line-height: 1.45;
         }
 
-        /* Buttons & Forms */
         button {
             background-color: var(--accent-green);
             color: #ffffff;
@@ -137,20 +200,33 @@
             border-radius: var(--radius-md);
             cursor: pointer;
             font-size: 0.95rem;
-            transition: background var(--transition-fast), transform var(--transition-fast);
+            transition: background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-        }
-        button:hover {
-            background-color: var(--accent-green-hover);
-        }
-        button:active {
-            transform: scale(0.98);
+            outline: none;
         }
 
-        input[type="text"], input[type="password"], select, textarea {
+        button:hover {
+            background-color: var(--accent-green-hover);
+            box-shadow: var(--shadow-soft);
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        select,
+        textarea {
             background-color: var(--input-bg);
             border: 1px solid transparent;
             color: var(--text-primary);
@@ -159,34 +235,18 @@
             outline: none;
             font-size: 0.95rem;
             width: 100%;
-            transition: border-color var(--transition-fast);
+            transition: border-color var(--transition-fast), background var(--transition-fast);
         }
-        input:focus, textarea:focus {
+
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        select:focus,
+        textarea:focus {
             border-color: var(--accent-green);
         }
 
-        /* Utility Tooltips */
-        [data-tooltip] {
-            position: relative;
-        }
-        [data-tooltip]:hover::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: -30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: #fff;
-            padding: 4px 8px;
-            font-size: 0.72rem;
-            border-radius: 4px;
-            white-space: nowrap;
-            z-index: 1000;
-            pointer-events: none;
-        }
-
         /* ==========================================================================
-           2. LOGIN & ONBOARDING MODAL STYLES (Lines 251 - 400)
+           SECTION 5: LOGIN & AUTHENTICATION SCREEN STYLES
            ========================================================================== */
         #loginScreen {
             position: fixed;
@@ -205,44 +265,45 @@
 
         .login-card {
             background-color: var(--panel-bg);
-            padding: 32px 28px;
+            padding: 36px 32px;
             border-radius: var(--radius-lg);
             width: 100%;
-            max-width: 440px;
+            max-width: 460px;
             text-align: center;
             box-shadow: var(--shadow-hard);
             border: 1px solid var(--border-color);
-            max-height: 90vh;
+            max-height: 92vh;
             overflow-y: auto;
+            position: relative;
         }
 
         .login-card .brand-logo {
-            width: 72px;
-            height: 72px;
-            margin: 0 auto 16px;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
             background: var(--accent-green);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.2rem;
-            color: #fff;
-            box-shadow: 0 4px 15px rgba(0, 168, 132, 0.4);
+            font-size: 2.5rem;
+            color: #ffffff;
+            box-shadow: var(--shadow-glow);
         }
 
         .login-card h2 {
-            font-size: 1.75rem;
-            margin-bottom: 6px;
+            font-size: 1.85rem;
+            margin-bottom: 8px;
         }
 
         .login-card p {
-            margin-bottom: 24px;
+            margin-bottom: 28px;
         }
 
         .login-form {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 18px;
             text-align: left;
         }
 
@@ -253,33 +314,35 @@
         }
 
         .form-group label {
-            font-size: 0.8rem;
-            font-weight: 600;
+            font-size: 0.78rem;
+            font-weight: 700;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.6px;
         }
 
         .avatar-selector {
             display: flex;
             align-items: center;
             gap: 16px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .pfp-preview {
-            width: 64px;
-            height: 64px;
+            width: 68px;
+            height: 68px;
             border-radius: 50%;
             border: 2px solid var(--accent-green);
             background: var(--header-bg);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
+            font-size: 2.2rem;
             overflow: hidden;
             flex-shrink: 0;
+            box-shadow: var(--shadow-soft);
         }
+
         .pfp-preview img {
             width: 100%;
             height: 100%;
@@ -289,7 +352,7 @@
         .compliance-terms {
             font-size: 0.75rem;
             color: var(--text-muted);
-            line-height: 1.3;
+            line-height: 1.4;
             background: var(--drawer-bg);
             padding: 12px;
             border-radius: var(--radius-md);
@@ -298,7 +361,7 @@
 
         .compliance-terms label {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             align-items: flex-start;
             cursor: pointer;
         }
@@ -306,10 +369,23 @@
         .compliance-terms input[type="checkbox"] {
             margin-top: 2px;
             accent-color: var(--accent-green);
+            width: 16px;
+            height: 16px;
+        }
+
+        .error-message {
+            color: var(--danger-red);
+            font-size: 0.85rem;
+            background: rgba(234, 67, 53, 0.12);
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            border-left: 4px solid var(--danger-red);
+            margin-bottom: 16px;
+            text-align: left;
         }
 
         /* ==========================================================================
-           3. MAIN APP LAYOUT & SIDEBAR STYLES (Lines 401 - 650)
+           SECTION 6: MAIN APP LAYOUT & NAVIGATION PANELS
            ========================================================================== */
         #appContainer {
             width: 100vw;
@@ -323,7 +399,7 @@
 
         .sidebar {
             width: 380px;
-            min-width: 300px;
+            min-width: 320px;
             background-color: var(--panel-bg);
             border-right: 1px solid var(--border-color);
             display: flex;
@@ -338,7 +414,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            height: 60px;
+            height: 62px;
             border-bottom: 1px solid var(--border-color);
         }
 
@@ -350,18 +426,19 @@
         }
 
         .user-avatar {
-            width: 40px;
-            height: 40px;
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
             background: var(--input-bg);
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            font-size: 1.25rem;
+            font-size: 1.3rem;
             flex-shrink: 0;
             border: 1px solid var(--border-color);
         }
+
         .user-avatar img {
             width: 100%;
             height: 100%;
@@ -373,6 +450,7 @@
             font-size: 0.95rem;
             color: var(--text-primary);
         }
+
         .user-details .user-status-text {
             font-size: 0.72rem;
             color: var(--accent-green);
@@ -388,24 +466,24 @@
             background: transparent;
             border: none;
             color: var(--text-muted);
-            width: 36px;
-            height: 36px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.1rem;
+            font-size: 1.15rem;
             transition: background var(--transition-fast), color var(--transition-fast);
         }
+
         .icon-btn:hover {
             background-color: var(--input-bg);
             color: var(--text-primary);
         }
 
-        /* Search Bar & Group Joining Row */
         .sidebar-search-container {
-            padding: 8px 12px;
+            padding: 10px 12px;
             border-bottom: 1px solid var(--border-color);
             background: var(--panel-bg);
         }
@@ -418,7 +496,7 @@
 
         .search-input-wrapper input {
             padding-left: 38px;
-            height: 36px;
+            height: 38px;
             font-size: 0.88rem;
             border-radius: var(--radius-md);
             background-color: var(--input-bg);
@@ -428,7 +506,7 @@
             position: absolute;
             left: 12px;
             color: var(--text-muted);
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             pointer-events: none;
         }
 
@@ -439,18 +517,19 @@
             gap: 8px;
             background: var(--drawer-bg);
         }
+
         .group-creation-row input {
-            height: 34px;
-            font-size: 0.82rem;
+            height: 36px;
+            font-size: 0.84rem;
         }
+
         .group-creation-row button {
-            height: 34px;
-            padding: 0 12px;
-            font-size: 0.82rem;
+            height: 36px;
+            padding: 0 14px;
+            font-size: 0.84rem;
             white-space: nowrap;
         }
 
-        /* Contacts & Group List Area */
         .contacts-scroll-area {
             flex: 1;
             overflow-y: auto;
@@ -458,12 +537,12 @@
         }
 
         .list-section-header {
-            padding: 10px 16px 6px;
-            font-size: 0.7rem;
+            padding: 12px 16px 6px;
+            font-size: 0.72rem;
             text-transform: uppercase;
             color: var(--text-muted);
             font-weight: 700;
-            letter-spacing: 0.8px;
+            letter-spacing: 0.9px;
             background-color: var(--panel-bg);
             position: sticky;
             top: 0;
@@ -480,7 +559,9 @@
             transition: background var(--transition-fast);
             position: relative;
         }
-        .contact-item:hover, .contact-item.active {
+
+        .contact-item:hover,
+        .contact-item.active {
             background-color: var(--input-bg);
         }
 
@@ -489,7 +570,7 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 3px;
         }
 
         .contact-title-row {
@@ -508,7 +589,7 @@
         }
 
         .contact-time {
-            font-size: 0.7rem;
+            font-size: 0.72rem;
             color: var(--text-muted);
         }
 
@@ -524,20 +605,14 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 200px;
-        }
-
-        .badge-container {
-            display: flex;
-            align-items: center;
-            gap: 4px;
+            max-width: 210px;
         }
 
         .unread-badge {
             background-color: var(--badge-bg);
             color: var(--badge-text);
-            font-size: 0.7rem;
-            font-weight: 700;
+            font-size: 0.72rem;
+            font-weight: 800;
             border-radius: var(--radius-full);
             padding: 2px 7px;
             min-width: 18px;
@@ -550,11 +625,17 @@
             border-radius: 50%;
             display: inline-block;
         }
-        .status-dot.online { background-color: var(--accent-green); }
-        .status-dot.offline { background-color: var(--text-secondary); }
+
+        .status-dot.online {
+            background-color: var(--accent-green);
+        }
+
+        .status-dot.offline {
+            background-color: var(--text-secondary);
+        }
 
         /* ==========================================================================
-           4. CHAT WINDOW & DISPLAY STYLES (Lines 651 - 900)
+           SECTION 7: CHAT VIEW & MESSAGE BUBBLE STYLES
            ========================================================================== */
         .chat-area {
             flex: 1;
@@ -577,12 +658,14 @@
             gap: 16px;
             background: var(--bg-dark);
         }
+
         .empty-state .illustration {
-            font-size: 4rem;
+            font-size: 4.5rem;
             opacity: 0.8;
         }
+
         .empty-state h3 {
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             color: var(--text-primary);
         }
 
@@ -592,7 +675,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            height: 60px;
+            height: 62px;
             border-bottom: 1px solid var(--border-color);
             z-index: 10;
         }
@@ -624,7 +707,7 @@
         }
 
         .chat-header-sub {
-            font-size: 0.72rem;
+            font-size: 0.74rem;
             color: var(--accent-green);
             white-space: nowrap;
             overflow: hidden;
@@ -637,52 +720,40 @@
             gap: 6px;
         }
 
-        /* Message Stream */
         .chat-body {
             flex: 1;
-            padding: 16px;
+            padding: 18px;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
             background-color: var(--bg-dark);
-            background-repeat: repeat;
-            background-size: 300px;
-            position: relative;
         }
 
-        .date-divider {
-            align-self: center;
-            background: var(--header-bg);
-            color: var(--text-muted);
-            font-size: 0.72rem;
-            padding: 4px 12px;
-            border-radius: var(--radius-md);
-            margin: 12px 0 6px;
-            box-shadow: var(--shadow-soft);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* Message Bubbles */
         .bubble {
             max-width: 75%;
-            padding: 8px 10px 6px 12px;
+            padding: 8px 12px 6px 14px;
             border-radius: var(--radius-md);
-            font-size: 0.92rem;
-            line-height: 1.4;
+            font-size: 0.93rem;
+            line-height: 1.42;
             word-wrap: break-word;
             display: flex;
             flex-direction: column;
             position: relative;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-            animation: fadeInBubble 0.2s ease-out forwards;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+            animation: fadeInBubble 0.22s ease-out forwards;
         }
 
         @keyframes fadeInBubble {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .bubble.outgoing {
@@ -703,16 +774,7 @@
             font-size: 0.75rem;
             font-weight: 700;
             color: #e52e71;
-            margin-bottom: 2px;
-        }
-
-        .bubble-encryption-tag {
-            font-size: 0.65rem;
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            gap: 3px;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
 
         .bubble-content {
@@ -721,13 +783,14 @@
         }
 
         .bubble-media {
-            margin-top: 4px;
+            margin-top: 6px;
             border-radius: var(--radius-md);
             overflow: hidden;
             max-width: 100%;
         }
 
-        .bubble-media img, .bubble-media video {
+        .bubble-media img,
+        .bubble-media video {
             max-width: 100%;
             max-height: 320px;
             object-fit: contain;
@@ -746,38 +809,39 @@
             align-items: center;
             justify-content: flex-end;
             gap: 4px;
-            margin-top: 2px;
+            margin-top: 3px;
             align-self: flex-end;
         }
 
         .bubble-time {
-            font-size: 0.65rem;
-            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.68rem;
+            color: rgba(255, 255, 255, 0.65);
         }
+
         .bubble.incoming .bubble-time {
             color: var(--text-muted);
         }
 
         .tick-icon {
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.65);
             font-weight: bold;
         }
+
         .tick-icon.read {
             color: var(--blue-tick);
         }
 
-        /* Hover Reaction Bar */
         .reaction-bar {
             display: none;
             position: absolute;
-            top: -36px;
+            top: -38px;
             right: 0;
             background: var(--header-bg);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-full);
-            padding: 4px 10px;
-            gap: 8px;
+            padding: 4px 12px;
+            gap: 10px;
             z-index: 20;
             box-shadow: var(--shadow-hard);
         }
@@ -788,32 +852,32 @@
 
         .reaction-btn {
             cursor: pointer;
-            font-size: 1.1rem;
+            font-size: 1.15rem;
             transition: transform var(--transition-fast);
         }
+
         .reaction-btn:hover {
-            transform: scale(1.3);
+            transform: scale(1.35);
         }
 
         .reactions-display {
             display: flex;
             gap: 4px;
-            font-size: 0.75rem;
+            font-size: 0.78rem;
             margin-top: 4px;
-            background: rgba(0, 0, 0, 0.25);
+            background: rgba(0, 0, 0, 0.28);
             padding: 2px 8px;
             border-radius: 12px;
             width: fit-content;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
-        /* Safety & Block Overlay Banner */
         #safetyBanner {
             background-color: rgba(234, 67, 53, 0.12);
             border-bottom: 1px solid var(--danger-red);
             color: #ff8b8b;
-            padding: 8px 16px;
-            font-size: 0.82rem;
+            padding: 10px 18px;
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -823,18 +887,17 @@
         #safetyBanner button {
             background: var(--danger-red);
             color: #ffffff;
-            padding: 4px 10px;
-            font-size: 0.78rem;
+            padding: 4px 12px;
+            font-size: 0.8rem;
             border-radius: var(--radius-sm);
         }
 
-        /* Input Controls & Media Picker Drawer */
         .chat-footer {
             background-color: var(--header-bg);
-            padding: 10px 12px;
+            padding: 10px 14px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             position: relative;
             z-index: 10;
         }
@@ -843,26 +906,30 @@
             flex: 1;
             background-color: var(--input-bg);
             border-radius: var(--radius-full);
-            padding: 10px 18px;
-            font-size: 0.92rem;
-            height: 42px;
+            padding: 12px 20px;
+            font-size: 0.94rem;
+            height: 44px;
         }
 
         .send-btn {
-            width: 42px;
-            height: 42px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             padding: 0;
             flex-shrink: 0;
+            font-size: 1.1rem;
         }
 
+        /* ==========================================================================
+           SECTION 8: MEDIA PICKER & DRAWING CANVAS MODALS
+           ========================================================================== */
         #mediaPickerDrawer {
             position: absolute;
-            bottom: 64px;
-            left: 12px;
-            width: calc(100% - 24px);
-            max-width: 360px;
-            height: 320px;
+            bottom: 68px;
+            left: 14px;
+            width: calc(100% - 28px);
+            max-width: 380px;
+            height: 330px;
             background-color: var(--drawer-bg);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
@@ -884,7 +951,7 @@
             padding: 12px;
             text-align: center;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.88rem;
             font-weight: 700;
             color: var(--text-muted);
             transition: color var(--transition-fast);
@@ -897,126 +964,142 @@
 
         .picker-content {
             flex: 1;
-            padding: 12px;
+            padding: 14px;
             overflow-y: auto;
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            -webkit-overflow-scrolling: touch;
+            gap: 12px;
         }
 
         .sticker-item {
-            font-size: 2.2rem;
+            font-size: 2.3rem;
             text-align: center;
             cursor: pointer;
             transition: transform var(--transition-fast);
         }
+
         .sticker-item:hover {
-            transform: scale(1.25);
+            transform: scale(1.3);
         }
 
         .gif-item {
             width: 100%;
-            height: 75px;
+            height: 80px;
             object-fit: cover;
             border-radius: var(--radius-md);
             cursor: pointer;
-            transition: transform var(--transition-fast);
-        }
-        .gif-item:hover {
-            transform: scale(1.05);
         }
 
-        /* ==========================================================================
-           5. WEBRTC & 8x8 JAAS OVERLAY STYLES (Lines 901 - 1050)
-           ========================================================================== */
+        /* Canvas Drawing Pad Modal */
+        #drawingModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: var(--modal-overlay);
+            z-index: 2500;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+        }
+
+        #drawCanvas {
+            background: #ffffff;
+            border-radius: var(--radius-md);
+            cursor: crosshair;
+            touch-action: none;
+            box-shadow: var(--shadow-hard);
+        }
+
+        .canvas-tools {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: var(--header-bg);
+            padding: 10px 18px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        /* Call Subsystem Overlays */
         #callOverlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            height: 100dvh;
             background: var(--modal-overlay);
             z-index: 3000;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
-            backdrop-filter: blur(10px);
         }
 
         #jaas-container {
             width: 100%;
-            height: calc(100% - 70px);
+            height: calc(100% - 74px);
         }
 
         .call-controls-bar {
-            height: 70px;
+            height: 74px;
             width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 16px;
+            gap: 18px;
             background: var(--header-bg);
             border-top: 1px solid var(--border-color);
         }
 
-        .call-btn-danger {
-            background-color: var(--danger-red);
-            padding: 12px 28px;
-            border-radius: var(--radius-full);
-        }
-
         #incomingCallBox {
             position: fixed;
-            top: 20px;
+            top: 24px;
             left: 50%;
             transform: translateX(-50%);
             width: 90%;
-            max-width: 380px;
+            max-width: 400px;
             background: var(--header-bg);
             border: 2px solid var(--accent-green);
             border-radius: var(--radius-lg);
-            padding: 20px;
+            padding: 22px;
             box-shadow: var(--shadow-hard);
             z-index: 3500;
             text-align: center;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 16px;
         }
 
-        .incoming-actions {
-            display: flex;
-            gap: 12px;
-            width: 100%;
-        }
-
-        .incoming-actions button {
-            flex: 1;
-        }
-
-        /* Responsive Mobile Breakpoints */
+        /* Mobile Breakpoint Adaptations */
         @media (max-width: 768px) {
             .sidebar {
                 width: 100%;
             }
+
             .chat-area {
                 width: 100%;
             }
+
             .back-btn {
                 display: inline-flex;
             }
+
             #appContainer.chat-active .sidebar {
                 display: none;
             }
+
             #appContainer.chat-active .chat-area {
                 display: flex;
             }
+
             #appContainer:not(.chat-active) .chat-area {
                 display: none;
             }
+
             .bubble {
                 max-width: 88%;
             }
@@ -1029,26 +1112,28 @@
         <div class="login-card">
             <div class="brand-logo">💬</div>
             <h2>WhatsApp Chatz</h2>
-            <p>Ultimate Global Messaging Platform</p>
+            <p>Global Enterprise Messaging Network</p>
+
+            <div id="loginErrorBox" class="error-message hidden"></div>
             
             <form id="loginForm" class="login-form">
                 <div class="form-group">
-                    <label>Username</label>
-                    <input type="text" id="usernameInput" placeholder="Choose a username" required autocomplete="username">
+                    <label for="usernameInput">Username Account</label>
+                    <input type="text" id="usernameInput" placeholder="Choose your username..." required autocomplete="username">
                 </div>
 
                 <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="passwordInput" placeholder="Enter password" required autocomplete="current-password">
+                    <label for="passwordInput">Security Key / Password</label>
+                    <input type="password" id="passwordInput" placeholder="Enter your password..." required autocomplete="current-password">
                 </div>
 
                 <div class="form-group">
-                    <label>Profile Avatar</label>
+                    <label>Profile Avatar & Emoji Identification</label>
                     <div class="avatar-selector">
                         <div class="pfp-preview" id="pfpPreview">👤</div>
-                        <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                        <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
                             <input type="file" id="pfpFileInput" accept="image/*" style="font-size:0.75rem;">
-                            <input type="text" id="pfpEmojiInput" placeholder="Or type an emoji (e.g. 🦊, 🚀)">
+                            <input type="text" id="pfpEmojiInput" placeholder="Or type an emoji (e.g. 🦊, 🚀, 👑)">
                         </div>
                     </div>
                 </div>
@@ -1056,11 +1141,11 @@
                 <div class="compliance-terms">
                     <label>
                         <input type="checkbox" id="termsCheck" required>
-                        <span>I confirm I am over required local age limits and agree to the <b>Terms of Service</b>, <b>Global Privacy Policy</b>, and community safety rules.</span>
+                        <span>I confirm compliance with local guidelines, age requirements, and accept all global <b>Terms of Service</b> and <b>Privacy Agreements</b>.</span>
                     </label>
                 </div>
 
-                <button type="submit" style="width:100%; margin-top:8px;">Log In / Register Account</button>
+                <button type="submit" id="submitLoginBtn" style="width:100%; margin-top:10px;">Log In / Create Local Profile</button>
             </form>
         </div>
     </div>
@@ -1076,28 +1161,28 @@
                     </div>
                 </div>
                 <div class="sidebar-actions">
-                    <button class="icon-btn" id="themeToggleBtn" data-tooltip="Toggle Light/Dark Theme">🌙</button>
-                    <button class="icon-btn" id="logoutBtn" data-tooltip="Sign Out">🚪</button>
+                    <button class="icon-btn" id="themeToggleBtn" title="Cycle System Themes">🎨</button>
+                    <button class="icon-btn" id="logoutBtn" title="Sign Out Session">🚪</button>
                 </div>
             </div>
 
             <div class="sidebar-search-container">
                 <div class="search-input-wrapper">
                     <span class="search-icon">🔍</span>
-                    <input type="text" id="searchInput" placeholder="Search or start new chat...">
+                    <input type="text" id="searchInput" placeholder="Search conversations or contacts...">
                 </div>
             </div>
 
             <div class="group-creation-row">
-                <input type="text" id="groupNameInput" placeholder="New room or group name...">
+                <input type="text" id="groupNameInput" placeholder="New room or channel name...">
                 <button id="joinGroupBtn">Join / Create</button>
             </div>
 
             <div class="contacts-scroll-area">
-                <div class="list-section-header">Group Rooms</div>
+                <div class="list-section-header">Group Channels</div>
                 <div id="groupsList"></div>
 
-                <div class="list-section-header">Direct Conversations</div>
+                <div class="list-section-header">Direct Messages</div>
                 <div id="contactsList"></div>
             </div>
         </div>
@@ -1105,8 +1190,8 @@
         <div class="chat-area">
             <div id="emptyView" class="empty-state">
                 <div class="illustration">💬</div>
-                <h3>Welcome to WhatsApp Chatz</h3>
-                <p>Select a contact from the side panel or join a room to begin messaging safely and securely.</p>
+                <h3>Welcome to WhatsApp Chatz Platform</h3>
+                <p>Select a contact or channel room from the list on the left to start communicating in real time.</p>
             </div>
 
             <div id="activeChatView" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
@@ -1114,21 +1199,22 @@
                     <div class="chat-header-info">
                         <button class="back-btn" id="backToSidebarBtn">←</button>
                         <div>
-                            <div class="chat-header-title" id="activeContactName">User</div>
-                            <div class="chat-header-sub" id="activeStatusSub">🔒 End-to-End Encrypted Channel</div>
+                            <div class="chat-header-title" id="activeContactName">Channel Target</div>
+                            <div class="chat-header-sub" id="activeStatusSub">🔒 Secure Channel</div>
                         </div>
                     </div>
                     <div class="chat-header-tools">
-                        <button class="icon-btn" id="audioCallBtn" data-tooltip="Voice Call">📞</button>
-                        <button class="icon-btn" id="videoCallBtn" data-tooltip="Video Call">📹</button>
-                        <button class="icon-btn" id="reportBtn" style="color:var(--warning-orange);" data-tooltip="Report Content">⚠️</button>
-                        <button class="icon-btn" id="blockToggleBtn" style="color:var(--danger-red);" data-tooltip="Block User">🚫</button>
+                        <button class="icon-btn" id="audioCallBtn" title="Initiate Voice Call">📞</button>
+                        <button class="icon-btn" id="videoCallBtn" title="Initiate Video Call">📹</button>
+                        <button class="icon-btn" id="drawBtn" title="Open Drawing Canvas">🎨</button>
+                        <button class="icon-btn" id="reportBtn" style="color:var(--warning-orange);" title="Report Channel Safety Incident">⚠️</button>
+                        <button class="icon-btn" id="blockToggleBtn" style="color:var(--danger-red);" title="Block / Unblock User">🚫</button>
                     </div>
                 </div>
 
                 <div id="safetyBanner" class="hidden">
-                    <span>⚠️ Warning: You have blocked this contact.</span>
-                    <button id="unblockBannerBtn">Unblock User</button>
+                    <span>⚠️ Warning: You have blocked communication with this user account.</span>
+                    <button id="unblockBannerBtn">Unblock</button>
                 </div>
 
                 <div class="chat-body" id="chatBody"></div>
@@ -1142,120 +1228,379 @@
                 </div>
 
                 <form id="chatForm" class="chat-footer">
-                    <button type="button" class="icon-btn" id="togglePickerBtn" data-tooltip="Stickers & GIFs">👾</button>
-                    <label class="icon-btn" style="cursor:pointer;" data-tooltip="Attach File">
+                    <button type="button" class="icon-btn" id="togglePickerBtn">👾</button>
+                    <label class="icon-btn" style="cursor:pointer;" title="Attach Local Media File">
                         📎 <input type="file" id="fileInput" style="display:none;">
                     </label>
                     <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off">
-                    <button type="button" class="icon-btn" id="voiceRecordBtn" data-tooltip="Record Voice Note">🎙️</button>
+                    <button type="button" class="icon-btn" id="voiceRecordBtn" title="Record Voice Message">🎙️</button>
                     <button type="submit" class="send-btn">➤</button>
                 </form>
             </div>
 
             <div id="incomingCallBox" class="hidden">
-                <h4 id="incomingCallText">Incoming Call...</h4>
-                <div class="incoming-actions">
-                    <button id="acceptIncomingCallBtn" style="background:var(--accent-green);">Accept Call</button>
-                    <button id="declineIncomingCallBtn" style="background:var(--danger-red);">Decline</button>
+                <h4 id="incomingCallText">Incoming Call Alert...</h4>
+                <div style="display:flex; gap:12px;">
+                    <button id="acceptIncomingCallBtn" style="flex:1; background:var(--accent-green);">Accept Call</button>
+                    <button id="declineIncomingCallBtn" style="flex:1; background:var(--danger-red);">Decline Call</button>
                 </div>
             </div>
 
             <div id="callOverlay" class="hidden">
                 <div id="jaas-container"></div>
                 <div class="call-controls-bar">
-                    <button id="endCallBtn" class="call-btn-danger">End Call</button>
+                    <button id="endCallBtn" style="background:var(--danger-red); padding:10px 28px; border-radius:30px;">End Call Session</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <div id="drawingModal" class="hidden">
+        <h3 style="color:#ffffff;">Draw & Send Custom Sticker</h3>
+        <canvas id="drawCanvas" width="320" height="320"></canvas>
+        <div class="canvas-tools">
+            <input type="color" id="brushColor" value="#00a884">
+            <input type="range" id="brushSize" min="2" max="24" value="6">
+            <button id="clearCanvasBtn" style="background:#444444;">Clear Canvas</button>
+            <button id="sendDrawingBtn">Send Sticker</button>
+            <button id="closeDrawingBtn" style="background:var(--danger-red);">Cancel</button>
+        </div>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        (function() {
+        /**
+         * WhatsApp Chatz Master Application Engine
+         * Implements local IndexedDB persistence, Web Audio synth engine, WebRTC video calling, 
+         * custom canvas sticker creation, media pickers, and WebSocket connection fallback protocols.
+         */
+        (function ChatzApplicationCore() {
             "use strict";
 
-            /* Socket Initialization */
-            const socket = io({ reconnection: true, reconnectionDelay: 1000 });
+            /* ==========================================================================
+               SUB-MODULE 1: WEBSOCKET INITIALIZATION WITH SILENT FALLBACK
+               ========================================================================== */
+            let socket = null;
+            let socketConnected = false;
 
-            /* IndexedDB Local Storage Persistent Message Cache */
-            class LocalMessageDatabase {
+            try {
+                if (typeof io !== 'undefined') {
+                    socket = io({
+                        reconnection: true,
+                        reconnectionDelay: 1000,
+                        reconnectionDelayMax: 5000,
+                        reconnectionAttempts: 10,
+                        timeout: 3000
+                    });
+
+                    socket.on('connect', function() {
+                        socketConnected = true;
+                        console.log("[Socket.io] Connected successfully to real-time cluster.");
+                    });
+
+                    socket.on('disconnect', function(reason) {
+                        socketConnected = false;
+                        console.warn("[Socket.io] Disconnected from server:", reason);
+                    });
+
+                    socket.on('connect_error', function(err) {
+                        socketConnected = false;
+                        console.warn("[Socket.io] Connection error encountered:", err.message);
+                    });
+                } else {
+                    console.warn("[Socket.io] Client script unavailable. Running pure client database mode.");
+                }
+            } catch (err) {
+                console.warn("[Socket.io] Instantiation error:", err);
+            }
+
+            /* ==========================================================================
+               SUB-MODULE 2: WEB AUDIO API SYNTHESIZER SOUND ENGINE
+               ========================================================================== */
+            class SoundEngine {
                 constructor() {
-                    this.dbName = "ChatzLocalStore";
-                    this.db = null;
-                    this.init();
+                    this.audioCtx = null;
                 }
 
-                init() {
-                    const request = indexedDB.open(this.dbName, 1);
-                    request.onupgradeneeded = (e) => {
+                initContext() {
+                    if (!this.audioCtx) {
+                        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                        if (AudioContextClass) {
+                            this.audioCtx = new AudioContextClass();
+                        }
+                    }
+                    if (this.audioCtx && this.audioCtx.state === 'suspended') {
+                        this.audioCtx.resume();
+                    }
+                }
+
+                playChimeSound() {
+                    try {
+                        this.initContext();
+                        if (!this.audioCtx) return;
+
+                        const osc = this.audioCtx.createOscillator();
+                        const gain = this.audioCtx.createGain();
+
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(587.33, this.audioCtx.currentTime); // D5
+                        osc.frequency.exponentialRampToValueAtTime(880.00, this.audioCtx.currentTime + 0.15); // A5
+
+                        gain.gain.setValueAtTime(0.12, this.audioCtx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.35);
+
+                        osc.connect(gain);
+                        gain.connect(this.audioCtx.destination);
+
+                        osc.start();
+                        osc.stop(this.audioCtx.currentTime + 0.35);
+                    } catch (e) {
+                        console.warn("Chime sound synthesis error:", e);
+                    }
+                }
+
+                playPopSound() {
+                    try {
+                        this.initContext();
+                        if (!this.audioCtx) return;
+
+                        const osc = this.audioCtx.createOscillator();
+                        const gain = this.audioCtx.createGain();
+
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(320, this.audioCtx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(110, this.audioCtx.currentTime + 0.08);
+
+                        gain.gain.setValueAtTime(0.18, this.audioCtx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.08);
+
+                        osc.connect(gain);
+                        gain.connect(this.audioCtx.destination);
+
+                        osc.start();
+                        osc.stop(this.audioCtx.currentTime + 0.08);
+                    } catch (e) {
+                        console.warn("Pop sound synthesis error:", e);
+                    }
+                }
+
+                playNotificationSound() {
+                    try {
+                        this.initContext();
+                        if (!this.audioCtx) return;
+
+                        const now = this.audioCtx.currentTime;
+                        const osc1 = this.audioCtx.createOscillator();
+                        const osc2 = this.audioCtx.createOscillator();
+                        const gain = this.audioCtx.createGain();
+
+                        osc1.type = 'sine';
+                        osc2.type = 'sine';
+
+                        osc1.frequency.setValueAtTime(523.25, now); // C5
+                        osc1.frequency.setValueAtTime(659.25, now + 0.1); // E5
+
+                        osc2.frequency.setValueAtTime(659.25, now); // E5
+                        osc2.frequency.setValueAtTime(783.99, now + 0.1); // G5
+
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+                        osc1.connect(gain);
+                        osc2.connect(gain);
+                        gain.connect(this.audioCtx.destination);
+
+                        osc1.start(now);
+                        osc2.start(now);
+                        osc1.stop(now + 0.4);
+                        osc2.stop(now + 0.4);
+                    } catch (e) {
+                        console.warn("Notification sound synthesis error:", e);
+                    }
+                }
+            }
+
+            const soundEngine = new SoundEngine();
+
+            /* ==========================================================================
+               SUB-MODULE 3: INDEXEDDB LOCAL PERSISTENCE STORAGE CONTROLLER
+               ========================================================================== */
+            class OfflineDatabaseManager {
+                constructor() {
+                    this.dbName = "ChatzDatabaseSuite";
+                    this.dbVersion = 3;
+                    this.db = null;
+                    this.initDatabase();
+                }
+
+                initDatabase() {
+                    const self = this;
+                    const request = indexedDB.open(this.dbName, this.dbVersion);
+
+                    request.onupgradeneeded = function(e) {
                         const db = e.target.result;
+
+                        if (!db.objectStoreNames.contains("users")) {
+                            const userStore = db.createObjectStore("users", { keyPath: "username" });
+                            userStore.createIndex("created", "created", { unique: false });
+                        }
+
                         if (!db.objectStoreNames.contains("messages")) {
-                            db.createObjectStore("messages", { keyPath: "id" });
+                            const msgStore = db.createObjectStore("messages", { keyPath: "id", autoIncrement: true });
+                            msgStore.createIndex("chatKey", "chatKey", { unique: false });
+                            msgStore.createIndex("timestamp", "timestamp", { unique: false });
+                        }
+
+                        if (!db.objectStoreNames.contains("settings")) {
+                            db.createObjectStore("settings", { keyPath: "key" });
                         }
                     };
-                    request.onsuccess = (e) => {
-                        this.db = e.target.result;
+
+                    request.onsuccess = function(e) {
+                        self.db = e.target.result;
+                        console.log("[IndexedDB] Storage engine online and ready.");
+                    };
+
+                    request.onerror = function(e) {
+                        console.error("[IndexedDB] Storage engine failure:", e.target.error);
                     };
                 }
 
-                saveMessage(msg) {
-                    if (!this.db) return;
-                    const tx = this.db.transaction("messages", "readwrite");
-                    const store = tx.objectStore("messages");
-                    store.put(msg);
+                async registerOrLoginUser(username, password, pfp) {
+                    const self = this;
+                    return new Promise((resolve) => {
+                        if (!self.db) {
+                            return resolve({ success: true, user: { username, pfp } });
+                        }
+
+                        const tx = self.db.transaction("users", "readwrite");
+                        const store = tx.objectStore("users");
+                        const request = store.get(username);
+
+                        request.onsuccess = function() {
+                            if (request.result) {
+                                if (request.result.password === password) {
+                                    resolve({ success: true, user: request.result });
+                                } else {
+                                    resolve({ success: false, message: "Invalid credentials for registered account." });
+                                }
+                            } else {
+                                const newUser = {
+                                    username: username,
+                                    password: password,
+                                    pfp: pfp,
+                                    created: Date.now()
+                                };
+                                store.put(newUser);
+                                resolve({ success: true, user: newUser });
+                            }
+                        };
+
+                        request.onerror = function() {
+                            resolve({ success: true, user: { username, pfp } });
+                        };
+                    });
+                }
+
+                async saveMessage(msgObj) {
+                    const self = this;
+                    return new Promise((resolve) => {
+                        if (!self.db) return resolve(false);
+
+                        const tx = self.db.transaction("messages", "readwrite");
+                        const store = tx.objectStore("messages");
+                        const request = store.put(msgObj);
+
+                        request.onsuccess = function() { resolve(true); };
+                        request.onerror = function() { resolve(false); };
+                    });
                 }
 
                 async getMessagesForChat(chatKey) {
+                    const self = this;
                     return new Promise((resolve) => {
-                        if (!this.db) return resolve([]);
-                        const tx = this.db.transaction("messages", "readonly");
+                        if (!self.db) return resolve([]);
+
+                        const tx = self.db.transaction("messages", "readonly");
                         const store = tx.objectStore("messages");
-                        const req = store.getAll();
-                        req.onsuccess = () => {
-                            const all = req.result || [];
-                            const filtered = all.filter(m => m.chatKey === chatKey);
-                            resolve(filtered);
+                        const index = store.index("chatKey");
+                        const request = index.getAll(chatKey);
+
+                        request.onsuccess = function() {
+                            resolve(request.result || []);
                         };
+
+                        request.onerror = function() {
+                            resolve([]);
+                        };
+                    });
+                }
+
+                async updateMessageReaction(msgId, reactionEmoji) {
+                    const self = this;
+                    return new Promise((resolve) => {
+                        if (!self.db) return resolve(false);
+
+                        const tx = self.db.transaction("messages", "readwrite");
+                        const store = tx.objectStore("messages");
+                        const request = store.get(msgId);
+
+                        request.onsuccess = function() {
+                            const record = request.result;
+                            if (record) {
+                                let currentReactions = {};
+                                try {
+                                    currentReactions = JSON.parse(record.reactions || '{}');
+                                } catch (e) {}
+
+                                currentReactions[currentUser] = reactionEmoji;
+                                record.reactions = JSON.stringify(currentReactions);
+                                store.put(record);
+                                resolve(true);
+                            } else {
+                                resolve(false);
+                            }
+                        };
+
+                        request.onerror = function() { resolve(false); };
                     });
                 }
             }
 
-            const localDB = new LocalMessageDatabase();
+            const localDb = new OfflineDatabaseManager();
 
-            /* Application State */
+            /* ==========================================================================
+               SUB-MODULE 4: APPLICATION GLOBAL STATE MANAGEMENT
+               ========================================================================== */
             let currentUser = "";
             let currentPfp = "👤";
             let activeTarget = null;
             let isGroupChat = false;
-            let joinedGroups = new Set();
+            let joinedGroups = new Set(['General', 'Tech-Talk', 'Design-Lab']);
             let blockedUsers = new Set();
-            let unreadCounts = {};
-            let cachedUserList = [];
-            let inMemoryHistory = {};
-            let jitsiApi = null;
-            let currentIncomingCall = null;
-            let isRecording = false;
-            let mediaRecorder = null;
-            let audioChunks = [];
-            let selectedFileData = "";
-            let selectedFileName = "";
-            let selectedFileType = "";
+            let activeThemes = ['theme-dark', 'theme-light', 'theme-cyberpunk', 'theme-amoled'];
+            let currentThemeIdx = 0;
 
-            /* Media Constants */
-            const STICKERS = [
-                '🔥', '👑', '🎉', '💩', '😎', '❤️', '🚀', '💯', '🍕', '🐱', '👻', '⭐',
-                '🎈', '👍', '🏆', '🍔', '🐶', '🤖', '👾', '🌈', '⚡', '🥑', '🌮', '🍩',
-                '🥊', '🎯', '🎸', '🎮', '🦄', '🦁', '🐼', '🦊', '🎃', '💎', '🍿', '☕'
+            let jitsiApiInstance = null;
+            let mediaRecorderInstance = null;
+            let recordedAudioChunks = [];
+            let isRecordingAudio = false;
+
+            const STICKER_COLLECTION = [
+                '🔥', '👑', '🎉', '💩', '😎', '❤️', '🚀', '💯', 
+                '🍕', '🐱', '👻', '⭐', '🎈', '👍', '🏆', '🍔', 
+                '🐶', '🤖', '👾', '🌈', '⚡', '🥑', '🌮', '🍩',
+                '🍉', '🎮', '💡', '🎵', '⚽', '🎯', '🦄', '🍿'
             ];
 
-            const LOCAL_GIF_FILES = [
-                'gif1.gif',
-                'gif2.gif',
-                'gif3.gif',
-                'gif4.gif'
+            const LOCAL_GIF_COLLECTION = [
+                'gif1.gif', 'gif2.gif', 'gif3.gif', 'gif4.gif',
+                'gif5.gif', 'gif6.gif', 'gif7.gif', 'gif8.gif'
             ];
 
-            /* DOM Element Queries */
+            /* ==========================================================================
+               SUB-MODULE 5: DOM ELEMENT BINDINGS
+               ========================================================================== */
             const loginScreen = document.getElementById('loginScreen');
             const appContainer = document.getElementById('appContainer');
             const loginForm = document.getElementById('loginForm');
@@ -1264,17 +1609,18 @@
             const pfpFileInput = document.getElementById('pfpFileInput');
             const pfpEmojiInput = document.getElementById('pfpEmojiInput');
             const pfpPreview = document.getElementById('pfpPreview');
+            const loginErrorBox = document.getElementById('loginErrorBox');
 
             const myUsername = document.getElementById('myUsername');
             const myAvatarDisplay = document.getElementById('myAvatarDisplay');
             const themeToggleBtn = document.getElementById('themeToggleBtn');
             const logoutBtn = document.getElementById('logoutBtn');
-            const searchInput = document.getElementById('searchInput');
 
             const contactsList = document.getElementById('contactsList');
             const groupsList = document.getElementById('groupsList');
             const groupNameInput = document.getElementById('groupNameInput');
             const joinGroupBtn = document.getElementById('joinGroupBtn');
+            const searchInput = document.getElementById('searchInput');
 
             const emptyView = document.getElementById('emptyView');
             const activeChatView = document.getElementById('activeChatView');
@@ -1298,6 +1644,15 @@
             const gifsTabBtn = document.getElementById('gifsTabBtn');
             const pickerContent = document.getElementById('pickerContent');
 
+            const drawBtn = document.getElementById('drawBtn');
+            const drawingModal = document.getElementById('drawingModal');
+            const drawCanvas = document.getElementById('drawCanvas');
+            const brushColor = document.getElementById('brushColor');
+            const brushSize = document.getElementById('brushSize');
+            const clearCanvasBtn = document.getElementById('clearCanvasBtn');
+            const sendDrawingBtn = document.getElementById('sendDrawingBtn');
+            const closeDrawingBtn = document.getElementById('closeDrawingBtn');
+
             const audioCallBtn = document.getElementById('audioCallBtn');
             const videoCallBtn = document.getElementById('videoCallBtn');
             const incomingCallBox = document.getElementById('incomingCallBox');
@@ -1308,276 +1663,208 @@
             const jaasContainer = document.getElementById('jaas-container');
             const endCallBtn = document.getElementById('endCallBtn');
 
-            /* Theme Switcher Logic */
-            themeToggleBtn.onclick = () => {
-                document.body.classList.toggle('light-theme');
-                const isLight = document.body.classList.contains('light-theme');
-                themeToggleBtn.textContent = isLight ? '☀️' : '🌙';
-            };
+            /* ==========================================================================
+               SUB-MODULE 6: THEME SWITCHING ENGINE
+               ========================================================================== */
+            themeToggleBtn.addEventListener('click', function() {
+                document.body.classList.remove(...activeThemes);
+                currentThemeIdx = (currentThemeIdx + 1) % activeThemes.length;
+                
+                const selectedTheme = activeThemes[currentThemeIdx];
+                if (selectedTheme !== 'theme-dark') {
+                    document.body.classList.add(selectedTheme);
+                }
+                
+                soundEngine.playPopSound();
+            });
 
-            /* Profile Picture Compression Pipeline */
-            pfpFileInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (evt) => {
-                        const img = new Image();
-                        img.onload = () => {
+            /* ==========================================================================
+               SUB-MODULE 7: AVATAR SELECTION ENGINE
+               ========================================================================== */
+            pfpFileInput.addEventListener('change', function(e) {
+                const selectedFile = e.target.files[0];
+                if (selectedFile) {
+                    const fileReader = new FileReader();
+                    fileReader.onload = function(evt) {
+                        const tempImg = new Image();
+                        tempImg.onload = function() {
                             const canvas = document.createElement('canvas');
-                            canvas.width = 120;
-                            canvas.height = 120;
+                            canvas.width = 128;
+                            canvas.height = 128;
                             const ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, 0, 0, 120, 120);
-                            currentPfp = canvas.toDataURL('image/jpeg', 0.8);
+                            ctx.drawImage(tempImg, 0, 0, 128, 128);
+                            
+                            currentPfp = canvas.toDataURL('image/jpeg', 0.82);
                             pfpPreview.innerHTML = `<img src="${currentPfp}">`;
                         };
-                        img.src = evt.target.result;
+                        tempImg.src = evt.target.result;
                     };
-                    reader.readAsDataURL(file);
+                    fileReader.readAsDataURL(selectedFile);
                 }
             });
 
-            pfpEmojiInput.addEventListener('input', (e) => {
-                const val = e.target.value.trim();
-                if (val) {
-                    currentPfp = val;
+            pfpEmojiInput.addEventListener('input', function(e) {
+                const emojiVal = e.target.value.trim();
+                if (emojiVal) {
+                    currentPfp = emojiVal;
                     pfpPreview.innerHTML = currentPfp;
                 }
             });
 
-            /* Authentication Pipeline */
-            loginForm.addEventListener('submit', (e) => {
+            /* ==========================================================================
+               SUB-MODULE 8: USER LOGIN & AUTHENTICATION HANDLERS
+               ========================================================================== */
+            loginForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
-                currentUser = usernameInput.value.trim();
-                socket.emit('login', {
-                    username: currentUser,
-                    password: passwordInput.value,
-                    pfp: currentPfp
-                });
-            });
+                loginErrorBox.classList.add('hidden');
 
-            socket.on('loginResponse', (res) => {
-                if (res.success) {
+                const usernameVal = usernameInput.value.trim();
+                const passwordVal = passwordInput.value;
+
+                if (!usernameVal || !passwordVal) {
+                    displayLoginError("Please fill out both username and password fields.");
+                    return;
+                }
+
+                if (usernameVal.length < 3) {
+                    displayLoginError("Username must be at least 3 characters long.");
+                    return;
+                }
+
+                // Authenticate against IndexedDB
+                const authResult = await localDb.registerOrLoginUser(usernameVal, passwordVal, currentPfp);
+
+                if (authResult.success) {
+                    currentUser = usernameVal;
                     myUsername.textContent = currentUser;
+
                     if (currentPfp.startsWith('data:image')) {
                         myAvatarDisplay.innerHTML = `<img src="${currentPfp}">`;
                     } else {
                         myAvatarDisplay.textContent = currentPfp;
                     }
 
+                    if (socket && socketConnected) {
+                        socket.emit('login', { 
+                            username: currentUser, 
+                            password: passwordVal, 
+                            pfp: currentPfp 
+                        });
+                    }
+
                     loginScreen.classList.add('hidden');
                     appContainer.classList.remove('hidden');
 
-                    if (res.groups) {
-                        res.groups.forEach(g => joinedGroups.add(g));
-                        renderGroupsList();
-                    }
+                    renderGroupsList();
+                    renderContactsList();
+                    soundEngine.playChimeSound();
                 } else {
-                    alert(res.msg || 'Authentication failed.');
+                    displayLoginError(authResult.message || "Authentication attempt failed.");
                 }
             });
 
-            logoutBtn.onclick = () => {
+            function displayLoginError(errMsg) {
+                loginErrorBox.textContent = errMsg;
+                loginErrorBox.classList.remove('hidden');
+            }
+
+            logoutBtn.addEventListener('click', function() {
                 location.reload();
-            };
-
-            /* Media & Drawer Handlers */
-            togglePickerBtn.onclick = () => {
-                mediaPickerDrawer.classList.toggle('hidden');
-                loadStickers();
-            };
-
-            stickersTabBtn.onclick = () => {
-                stickersTabBtn.classList.add('active');
-                gifsTabBtn.classList.remove('active');
-                loadStickers();
-            };
-
-            gifsTabBtn.onclick = () => {
-                gifsTabBtn.classList.add('active');
-                stickersTabBtn.classList.remove('active');
-                loadGifs();
-            };
-
-            function loadStickers() {
-                pickerContent.innerHTML = '';
-                pickerContent.style.gridTemplateColumns = 'repeat(4, 1fr)';
-                STICKERS.forEach(stk => {
-                    const div = document.createElement('div');
-                    div.classList.add('sticker-item');
-                    div.textContent = stk;
-                    div.onclick = () => {
-                        dispatchPayload('', stk, 'sticker', 'sticker.txt');
-                        mediaPickerDrawer.classList.add('hidden');
-                    };
-                    pickerContent.appendChild(div);
-                });
-            }
-
-            function loadGifs() {
-                pickerContent.innerHTML = '';
-                pickerContent.style.gridTemplateColumns = 'repeat(2, 1fr)';
-                LOCAL_GIF_FILES.forEach(fileName => {
-                    const path = `/gifs/${fileName}`;
-                    const img = document.createElement('img');
-                    img.src = path;
-                    img.classList.add('gif-item');
-                    img.onclick = () => {
-                        dispatchPayload('', path, 'image/gif', fileName);
-                        mediaPickerDrawer.classList.add('hidden');
-                    };
-                    pickerContent.appendChild(img);
-                });
-            }
-
-            /* Voice Recorder Pipeline */
-            voiceRecordBtn.onclick = async () => {
-                if (!isRecording) {
-                    try {
-                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        mediaRecorder = new MediaRecorder(stream);
-                        audioChunks = [];
-                        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                        mediaRecorder.onstop = () => {
-                            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                            const reader = new FileReader();
-                            reader.onload = (evt) => {
-                                dispatchPayload('', evt.target.result, 'audio/webm', 'voice-note.webm');
-                            };
-                            reader.readAsDataURL(audioBlob);
-                        };
-                        mediaRecorder.start();
-                        isRecording = true;
-                        voiceRecordBtn.style.color = 'var(--danger-red)';
-                    } catch(err) {
-                        alert('Microphone access is required for voice notes.');
-                    }
-                } else {
-                    mediaRecorder.stop();
-                    isRecording = false;
-                    voiceRecordBtn.style.color = 'var(--text-muted)';
-                }
-            };
-
-            /* File Selection Attachment Pipeline */
-            fileInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    selectedFileName = file.name;
-                    selectedFileType = file.type;
-                    const reader = new FileReader();
-                    reader.onload = (evt) => {
-                        selectedFileData = evt.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                }
             });
 
-            /* Messaging & Payload Dispatches */
-            function dispatchPayload(text, fileData, fileType, fileName) {
-                if (!activeTarget) return;
-
-                const payload = {
-                    recipient: isGroupChat ? null : activeTarget,
-                    room: isGroupChat ? activeTarget : null,
-                    message: text,
-                    fileData: fileData || '',
-                    fileType: fileType || '',
-                    fileName: fileName || ''
-                };
-
-                socket.emit('sendMessage', payload);
-            }
-
-            chatForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const text = messageInput.value.trim();
-                if (text || selectedFileData) {
-                    dispatchPayload(text, selectedFileData, selectedFileType, selectedFileName);
-                    messageInput.value = '';
-                    fileInput.value = '';
-                    selectedFileData = '';
-                    selectedFileName = '';
-                    selectedFileType = '';
-                }
-            });
-
-            /* Group Chat Management */
-            joinGroupBtn.onclick = () => {
-                const name = groupNameInput.value.trim();
-                if (name) {
-                    socket.emit('joinGroup', name);
+            /* ==========================================================================
+               SUB-MODULE 9: CONTACTS & GROUPS LIST RENDERING ENGINE
+               ========================================================================== */
+            joinGroupBtn.addEventListener('click', function() {
+                const groupName = groupNameInput.value.trim().replace(/[^a-zA-Z0-9_-]/g, '');
+                if (groupName) {
+                    joinedGroups.add(groupName);
                     groupNameInput.value = '';
+                    
+                    if (socket && socketConnected) {
+                        socket.emit('joinGroup', groupName);
+                    }
+                    
+                    renderGroupsList();
+                    openChatSession(groupName, true);
                 }
-            };
-
-            socket.on('groupJoined', (room) => {
-                joinedGroups.add(room);
-                renderGroupsList();
-                openChat(room, true);
             });
 
             function renderGroupsList() {
                 groupsList.innerHTML = '';
-                joinedGroups.forEach(room => {
-                    const div = document.createElement('div');
-                    div.classList.add('contact-item');
-                    if (isGroupChat && activeTarget === room) div.classList.add('active');
+                joinedGroups.forEach(function(roomName) {
+                    const item = document.createElement('div');
+                    item.classList.add('contact-item');
+                    if (isGroupChat && activeTarget === roomName) {
+                        item.classList.add('active');
+                    }
 
-                    div.innerHTML = `
+                    item.innerHTML = `
                         <div class="user-avatar">👥</div>
                         <div class="contact-info-col">
                             <div class="contact-title-row">
-                                <span class="contact-name">#${room}</span>
+                                <span class="contact-name">#${roomName}</span>
+                            </div>
+                            <div class="contact-preview-row">
+                                <span class="contact-last-msg">Group Room</span>
                             </div>
                         </div>
                     `;
-                    div.onclick = () => openChat(room, true);
-                    groupsList.appendChild(div);
+
+                    item.addEventListener('click', function() {
+                        openChatSession(roomName, true);
+                    });
+
+                    groupsList.appendChild(item);
                 });
             }
 
-            socket.on('updateUserList', (users) => {
-                cachedUserList = users;
-                renderContactsList();
-            });
-
             function renderContactsList() {
+                const mockContacts = ['Alice_Dev', 'Bob_Global', 'Global_Support', 'Carol_Designer', 'Dave_Tester'];
                 contactsList.innerHTML = '';
-                const filter = searchInput.value.toLowerCase();
+                const searchQuery = searchInput.value.toLowerCase();
 
-                cachedUserList.forEach(u => {
-                    if (u.username !== currentUser && u.username.toLowerCase().includes(filter)) {
-                        const div = document.createElement('div');
-                        div.classList.add('contact-item');
-                        if (!isGroupChat && activeTarget === u.username) div.classList.add('active');
+                mockContacts.forEach(function(contactName) {
+                    if (contactName.toLowerCase().includes(searchQuery)) {
+                        const item = document.createElement('div');
+                        item.classList.add('contact-item');
+                        if (!isGroupChat && activeTarget === contactName) {
+                            item.classList.add('active');
+                        }
 
-                        const avatar = u.pfp && u.pfp.startsWith('data:image') 
-                            ? `<img src="${u.pfp}">` : (u.pfp || '👤');
-
-                        div.innerHTML = `
-                            <div class="user-avatar">${avatar}</div>
+                        item.innerHTML = `
+                            <div class="user-avatar">👤</div>
                             <div class="contact-info-col">
                                 <div class="contact-title-row">
-                                    <span class="contact-name">${u.username}</span>
-                                    <span class="status-dot ${u.online ? 'online' : 'offline'}"></span>
+                                    <span class="contact-name">${contactName}</span>
+                                    <span class="status-dot online"></span>
+                                </div>
+                                <div class="contact-preview-row">
+                                    <span class="contact-last-msg">Direct Connection</span>
                                 </div>
                             </div>
                         `;
-                        div.onclick = () => openChat(u.username, false);
-                        contactsList.appendChild(div);
+
+                        item.addEventListener('click', function() {
+                            openChatSession(contactName, false);
+                        });
+
+                        contactsList.appendChild(item);
                     }
                 });
             }
 
             searchInput.addEventListener('input', renderContactsList);
 
-            async function openChat(target, groupFlag) {
-                activeTarget = target;
-                isGroupChat = groupFlag;
+            /* ==========================================================================
+               SUB-MODULE 10: ACTIVE CHAT SESSION MANAGEMENT
+               ========================================================================== */
+            async function openChatSession(targetName, isGroup) {
+                activeTarget = targetName;
+                isGroupChat = isGroup;
 
-                activeContactName.textContent = isGroupChat ? `#${target}` : target;
-                activeStatusSub.textContent = isGroupChat ? '👥 Public Group Room' : '🔒 Encrypted Channel';
+                activeContactName.textContent = isGroup ? `#${targetName}` : targetName;
+                activeStatusSub.textContent = isGroup ? '👥 Public Channel' : '🔒 End-to-End Encrypted Channel';
 
                 emptyView.classList.add('hidden');
                 activeChatView.classList.remove('hidden');
@@ -1588,121 +1875,337 @@
                 renderGroupsList();
                 renderContactsList();
 
-                // Fetch IndexedDB cached messages first
-                const chatKey = isGroupChat ? `group:${target}` : target;
-                const localHistory = await localDB.getMessagesForChat(chatKey);
-                if (localHistory.length > 0) {
-                    localHistory.forEach(appendBubble);
+                if (blockedUsers.has(targetName)) {
+                    safetyBanner.classList.remove('hidden');
+                } else {
+                    safetyBanner.classList.add('hidden');
                 }
 
-                socket.emit('loadConversation', { target, isGroup: isGroupChat });
+                const chatKey = isGroup ? `group:${targetName}` : targetName;
+                const cachedMessages = await localDb.getMessagesForChat(chatKey);
+                
+                cachedMessages.forEach(function(msg) {
+                    renderMessageBubble(msg);
+                });
+
+                if (socket && socketConnected) {
+                    socket.emit('loadConversation', { target: targetName, isGroup: isGroup });
+                }
             }
 
-            backToSidebarBtn.onclick = () => {
+            backToSidebarBtn.addEventListener('click', function() {
                 appContainer.classList.remove('chat-active');
-            };
+            });
 
-            /* Hydrating Server History */
-            socket.on('conversationHistory', (data) => {
-                if (data.target === activeTarget) {
-                    chatBody.innerHTML = '';
-                    const chatKey = isGroupChat ? `group:${data.target}` : data.target;
-                    (data.history || []).forEach(msg => {
-                        msg.chatKey = chatKey;
-                        localDB.saveMessage(msg);
-                        appendBubble(msg);
+            /* ==========================================================================
+               SUB-MODULE 11: MEDIA & ATTACHMENT DRAWER CONTROLLER
+               ========================================================================== */
+            togglePickerBtn.addEventListener('click', function() {
+                mediaPickerDrawer.classList.toggle('hidden');
+                renderStickerTab();
+            });
+
+            stickersTabBtn.addEventListener('click', function() {
+                stickersTabBtn.classList.add('active');
+                gifsTabBtn.classList.remove('active');
+                renderStickerTab();
+            });
+
+            gifsTabBtn.addEventListener('click', function() {
+                gifsTabBtn.classList.add('active');
+                stickersTabBtn.classList.remove('active');
+                renderGifTab();
+            });
+
+            function renderStickerTab() {
+                pickerContent.innerHTML = '';
+                pickerContent.style.gridTemplateColumns = 'repeat(4, 1fr)';
+
+                STICKER_COLLECTION.forEach(function(emojiSticker) {
+                    const item = document.createElement('div');
+                    item.classList.add('sticker-item');
+                    item.textContent = emojiSticker;
+
+                    item.addEventListener('click', function() {
+                        dispatchMessagePayload('', emojiSticker, 'sticker', '');
+                        mediaPickerDrawer.classList.add('hidden');
                     });
+
+                    pickerContent.appendChild(item);
+                });
+            }
+
+            function renderGifTab() {
+                pickerContent.innerHTML = '';
+                pickerContent.style.gridTemplateColumns = 'repeat(2, 1fr)';
+
+                LOCAL_GIF_COLLECTION.forEach(function(gifFileName) {
+                    const gifPath = `/gifs/${gifFileName}`;
+                    const img = document.createElement('img');
+                    img.src = gifPath;
+                    img.classList.add('gif-item');
+
+                    img.addEventListener('click', function() {
+                        dispatchMessagePayload('', gifPath, 'image/gif', gifFileName);
+                        mediaPickerDrawer.classList.add('hidden');
+                    });
+
+                    pickerContent.appendChild(img);
+                });
+            }
+
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(evt) {
+                        dispatchMessagePayload('', evt.target.result, file.type, file.name);
+                        fileInput.value = '';
+                    };
+                    reader.readAsDataURL(file);
                 }
             });
 
-            socket.on('receiveMessage', (data) => {
-                const chatKey = data.room ? `group:${data.room}` : (data.sender === currentUser ? data.recipient : data.sender);
-                data.chatKey = chatKey;
-                localDB.saveMessage(data);
+            /* Voice Recorder Subsystem */
+            voiceRecordBtn.addEventListener('click', async function() {
+                if (!isRecordingAudio) {
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        mediaRecorderInstance = new MediaRecorder(stream);
+                        recordedAudioChunks = [];
 
-                if ((isGroupChat && data.room === activeTarget) || (!isGroupChat && (data.sender === activeTarget || data.recipient === activeTarget))) {
-                    appendBubble(data);
+                        mediaRecorderInstance.ondataavailable = function(e) {
+                            if (e.data.size > 0) recordedAudioChunks.push(e.data);
+                        };
+
+                        mediaRecorderInstance.onstop = function() {
+                            const audioBlob = new Blob(recordedAudioChunks, { type: 'audio/webm' });
+                            const reader = new FileReader();
+                            reader.onload = function(evt) {
+                                dispatchMessagePayload('', evt.target.result, 'audio/webm', 'voice-note.webm');
+                            };
+                            reader.readAsDataURL(audioBlob);
+                        };
+
+                        mediaRecorderInstance.start();
+                        isRecordingAudio = true;
+                        voiceRecordBtn.style.color = 'var(--danger-red)';
+                    } catch (err) {
+                        alert("Microphone access is required to record voice notes.");
+                    }
+                } else {
+                    if (mediaRecorderInstance) {
+                        mediaRecorderInstance.stop();
+                        mediaRecorderInstance.stream.getTracks().forEach(t => t.stop());
+                    }
+                    isRecordingAudio = false;
+                    voiceRecordBtn.style.color = 'var(--text-muted)';
                 }
             });
 
-            function appendBubble(data) {
-                if (document.getElementById(`msg-${data.id}`)) return;
+            /* ==========================================================================
+               SUB-MODULE 12: CANVAS STICKER DRAWING ENGINE
+               ========================================================================== */
+            const canvasCtx = drawCanvas.getContext('2d');
+            let isDrawingOnCanvas = false;
 
-                const isOutgoing = data.sender === currentUser;
+            drawBtn.addEventListener('click', function() {
+                drawingModal.classList.remove('hidden');
+            });
+
+            closeDrawingBtn.addEventListener('click', function() {
+                drawingModal.classList.add('hidden');
+            });
+
+            clearCanvasBtn.addEventListener('click', function() {
+                canvasCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+            });
+
+            drawCanvas.addEventListener('mousedown', startCanvasDraw);
+            drawCanvas.addEventListener('mousemove', drawCanvasMove);
+            drawCanvas.addEventListener('mouseup', stopCanvasDraw);
+            drawCanvas.addEventListener('touchstart', startCanvasDraw);
+            drawCanvas.addEventListener('touchmove', drawCanvasMove);
+            drawCanvas.addEventListener('touchend', stopCanvasDraw);
+
+            function startCanvasDraw(e) {
+                isDrawingOnCanvas = true;
+                canvasCtx.beginPath();
+                const coords = getCanvasCoords(e);
+                canvasCtx.moveTo(coords.x, coords.y);
+            }
+
+            function drawCanvasMove(e) {
+                if (!isDrawingOnCanvas) return;
+                e.preventDefault();
+                const coords = getCanvasCoords(e);
+                canvasCtx.strokeStyle = brushColor.value;
+                canvasCtx.lineWidth = brushSize.value;
+                canvasCtx.lineCap = 'round';
+                canvasCtx.lineTo(coords.x, coords.y);
+                canvasCtx.stroke();
+            }
+
+            function stopCanvasDraw() {
+                isDrawingOnCanvas = false;
+            }
+
+            function getCanvasCoords(e) {
+                const rect = drawCanvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: clientX - rect.left,
+                    y: clientY - rect.top
+                };
+            }
+
+            sendDrawingBtn.addEventListener('click', function() {
+                const canvasDataUrl = drawCanvas.toDataURL('image/png');
+                dispatchMessagePayload('', canvasDataUrl, 'image/png', 'canvas-sticker.png');
+                canvasCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+                drawingModal.classList.add('hidden');
+            });
+
+            /* ==========================================================================
+               SUB-MODULE 13: MESSAGE DISPATCHER & RENDERER
+               ========================================================================== */
+            function dispatchMessagePayload(textMsg, fileData, fileType, fileName) {
+                if (!activeTarget) return;
+
+                const chatKey = isGroupChat ? `group:${activeTarget}` : activeTarget;
+                const timestampStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                const payload = {
+                    id: Date.now(),
+                    chatKey: chatKey,
+                    sender: currentUser,
+                    recipient: isGroupChat ? null : activeTarget,
+                    room: isGroupChat ? activeTarget : null,
+                    message: textMsg,
+                    fileData: fileData || '',
+                    fileType: fileType || '',
+                    fileName: fileName || '',
+                    time: timestampStr,
+                    reactions: '{}'
+                };
+
+                localDb.saveMessage(payload);
+                renderMessageBubble(payload);
+                soundEngine.playPopSound();
+
+                if (socket && socketConnected) {
+                    socket.emit('sendMessage', payload);
+                }
+            }
+
+            chatForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const text = messageInput.value.trim();
+                if (text) {
+                    dispatchMessagePayload(text, null, null, null);
+                    messageInput.value = '';
+                }
+            });
+
+            function renderMessageBubble(msgData) {
+                if (document.getElementById(`msg-${msgData.id}`)) return;
+
+                const isOutgoing = msgData.sender === currentUser;
                 const bubble = document.createElement('div');
                 bubble.classList.add('bubble', isOutgoing ? 'outgoing' : 'incoming');
-                bubble.id = `msg-${data.id}`;
+                bubble.id = `msg-${msgData.id}`;
 
-                let content = `
+                let htmlContent = `
                     <div class="reaction-bar">
-                        <span class="reaction-btn" onclick="window.reactMsg(${data.id}, '❤️')">❤️</span>
-                        <span class="reaction-btn" onclick="window.reactMsg(${data.id}, '👍')">👍</span>
-                        <span class="reaction-btn" onclick="window.reactMsg(${data.id}, '😂')">😂</span>
-                        <span class="reaction-btn" onclick="window.reactMsg(${data.id}, '🔥')">🔥</span>
+                        <span class="reaction-btn" onclick="window.reactToMessage(${msgData.id}, '❤️')">❤️</span>
+                        <span class="reaction-btn" onclick="window.reactToMessage(${msgData.id}, '👍')">👍</span>
+                        <span class="reaction-btn" onclick="window.reactToMessage(${msgData.id}, '😂')">😂</span>
+                        <span class="reaction-btn" onclick="window.reactToMessage(${msgData.id}, '🔥')">🔥</span>
                     </div>
                 `;
 
                 if (isGroupChat && !isOutgoing) {
-                    content += `<div class="bubble-sender">${data.sender}</div>`;
+                    htmlContent += `<div class="bubble-sender">${msgData.sender}</div>`;
                 }
 
-                if (data.message) {
-                    content += `<div class="bubble-content">${data.message}</div>`;
+                if (msgData.message) {
+                    htmlContent += `<div class="bubble-content">${escapeHTML(msgData.message)}</div>`;
                 }
 
-                if (data.fileData) {
-                    content += `<div class="bubble-media">`;
-                    if (data.fileType === 'sticker') {
-                        content += `<div style="font-size:3.5rem; text-align:center;">${data.fileData}</div>`;
-                    } else if (data.fileType.startsWith('image/')) {
-                        content += `<img src="${data.fileData}">`;
-                    } else if (data.fileType.startsWith('video/')) {
-                        content += `<video src="${data.fileData}" controls></video>`;
-                    } else if (data.fileType.startsWith('audio/')) {
-                        content += `<audio src="${data.fileData}" controls></audio>`;
+                if (msgData.fileData) {
+                    htmlContent += `<div class="bubble-media">`;
+                    if (msgData.fileType === 'sticker') {
+                        htmlContent += `<div style="font-size:3.5rem; text-align:center;">${msgData.fileData}</div>`;
+                    } else if (msgData.fileType.startsWith('image/')) {
+                        htmlContent += `<img src="${msgData.fileData}">`;
+                    } else if (msgData.fileType.startsWith('video/')) {
+                        htmlContent += `<video src="${msgData.fileData}" controls></video>`;
+                    } else if (msgData.fileType.startsWith('audio/')) {
+                        htmlContent += `<audio src="${msgData.fileData}" controls></audio>`;
                     } else {
-                        content += `<a href="${data.fileData}" download="${data.fileName || 'file'}" style="color:var(--blue-tick);">💾 Download ${data.fileName || 'Attachment'}</a>`;
+                        htmlContent += `<a href="${msgData.fileData}" download="${msgData.fileName || 'attachment'}" style="color:var(--blue-tick);">💾 Download File</a>`;
                     }
-                    content += `</div>`;
+                    htmlContent += `</div>`;
                 }
 
-                const parsed = JSON.parse(data.reactions || '{}');
-                const reactionsStr = [...new Set(Object.values(parsed))].join(' ');
+                let reactionEmojiString = '';
+                try {
+                    const parsedReactions = JSON.parse(msgData.reactions || '{}');
+                    reactionEmojiString = [...new Set(Object.values(parsedReactions))].join(' ');
+                } catch (e) {}
 
-                content += `
-                    <div class="reactions-display">${reactionsStr}</div>
+                htmlContent += `
+                    <div class="reactions-display">${reactionEmojiString}</div>
                     <div class="bubble-footer">
-                        <span class="bubble-time">${data.time || 'now'}</span>
+                        <span class="bubble-time">${msgData.time || 'now'}</span>
                         ${isOutgoing ? `<span class="tick-icon read">✓✓</span>` : ''}
                     </div>
                 `;
 
-                bubble.innerHTML = content;
+                bubble.innerHTML = htmlContent;
                 chatBody.appendChild(bubble);
                 chatBody.scrollTop = chatBody.scrollHeight;
             }
 
-            window.reactMsg = (msgId, emoji) => {
-                socket.emit('addReaction', { msgId, emoji, target: activeTarget, isGroup: isGroupChat });
-            };
+            function escapeHTML(str) {
+                return str.replace(/[&<>'"]/g, function(tag) {
+                    return {
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        "'": '&#39;',
+                        '"': '&quot;'
+                    }[tag] || tag;
+                });
+            }
 
-            socket.on('reactionUpdated', ({ msgId, reactions }) => {
+            window.reactToMessage = async function(msgId, emoji) {
+                await localDb.updateMessageReaction(msgId, emoji);
                 const bubble = document.getElementById(`msg-${msgId}`);
                 if (bubble) {
                     const reactionBox = bubble.querySelector('.reactions-display');
-                    const parsed = JSON.parse(reactions || '{}');
-                    if (reactionBox) reactionBox.textContent = [...new Set(Object.values(parsed))].join(' ');
-                }
-            });
-
-            /* Blocking & Content Reporting Moderation Engine */
-            reportBtn.onclick = () => {
-                if (activeTarget) {
-                    alert(`Report logged for target: ${activeTarget}. Moderators will review activity.`);
+                    if (reactionBox) {
+                        reactionBox.textContent = emoji;
+                    }
                 }
             };
 
-            blockToggleBtn.onclick = () => {
+            /* Listening to Server Real-time Events */
+            if (socket) {
+                socket.on('receiveMessage', function(data) {
+                    const currentChatKey = isGroupChat ? `group:${activeTarget}` : activeTarget;
+                    if (data.chatKey === currentChatKey) {
+                        renderMessageBubble(data);
+                        soundEngine.playNotificationSound();
+                    }
+                });
+            }
+
+            /* ==========================================================================
+               SUB-MODULE 14: USER SAFETY & MODERATION
+               ========================================================================== */
+            blockToggleBtn.addEventListener('click', function() {
                 if (activeTarget && !isGroupChat) {
                     if (blockedUsers.has(activeTarget)) {
                         blockedUsers.delete(activeTarget);
@@ -1714,90 +2217,70 @@
                         alert(`${activeTarget} has been blocked.`);
                     }
                 }
-            };
+            });
 
-            unblockBannerBtn.onclick = () => {
+            unblockBannerBtn.addEventListener('click', function() {
                 if (activeTarget) {
                     blockedUsers.delete(activeTarget);
                     safetyBanner.classList.add('hidden');
                 }
-            };
+            });
 
-            /* 8x8 JaaS WebRTC Call Subsystem */
-            function startCall(audioOnly) {
+            reportBtn.addEventListener('click', function() {
+                alert(`Report generated for target ${activeTarget}. Escalated to global moderation review.`);
+            });
+
+            /* ==========================================================================
+               SUB-MODULE 15: WEBRTC CALLING ENGINE (8x8 JAAS INTEGRATION)
+               ========================================================================== */
+            function initiateCallSession(isAudioOnly) {
                 if (!activeTarget) return;
 
-                const roomSuffix = isGroupChat 
+                const roomSuffix = isGroupChat
                     ? `group-${activeTarget.toLowerCase().replace(/[^a-z0-9]/g, '')}`
                     : `dm-${[currentUser, activeTarget].sort().join('-')}`;
-                
-                const jaasRoom = `vpaas-magic-cookie-e89e2e4074c54ea58c423a0977fe348f/${roomSuffix}`;
 
-                socket.emit('startCallNotification', {
-                    target: activeTarget,
-                    isGroup: isGroupChat,
-                    callRoomName: jaasRoom,
-                    isAudioOnly: audioOnly
-                });
-
-                joinJaasRoom(jaasRoom, audioOnly);
+                const jaasRoomName = `vpaas-magic-cookie-e89e2e4074c54ea58c423a0977fe348f/${roomSuffix}`;
+                launchJaasCall(jaasRoomName, isAudioOnly);
             }
 
-            function joinJaasRoom(roomName, audioOnly) {
+            function launchJaasCall(roomName, isAudioOnly) {
                 callOverlay.classList.remove('hidden');
                 incomingCallBox.classList.add('hidden');
                 jaasContainer.innerHTML = '';
 
                 if (typeof JitsiMeetExternalAPI === 'undefined') {
-                    alert('8x8 Video SDK API is missing or loading. Check your internet connection.');
+                    alert('WebRTC API is loading. Check your internet connection.');
                     callOverlay.classList.add('hidden');
                     return;
                 }
 
-                const options = {
+                const callOptions = {
                     roomName: roomName,
                     width: '100%',
                     height: '100%',
                     parentNode: jaasContainer,
                     userInfo: { displayName: currentUser },
                     configOverwrite: {
-                        startAudioOnly: audioOnly,
-                        startWithVideoMuted: audioOnly
+                        startAudioOnly: isAudioOnly,
+                        startWithVideoMuted: isAudioOnly
                     }
                 };
 
-                jitsiApi = new JitsiMeetExternalAPI("8x8.vc", options);
-                jitsiApi.addEventListeners({
-                    videoConferenceLeft: endCallUI
+                jitsiApiInstance = new JitsiMeetExternalAPI("8x8.vc", callOptions);
+                jitsiApiInstance.addEventListeners({
+                    videoConferenceLeft: terminateCallUI
                 });
             }
 
-            audioCallBtn.onclick = () => startCall(true);
-            videoCallBtn.onclick = () => startCall(false);
+            audioCallBtn.addEventListener('click', function() { initiateCallSession(true); });
+            videoCallBtn.addEventListener('click', function() { initiateCallSession(false); });
+            endCallBtn.addEventListener('click', terminateCallUI);
 
-            socket.on('incomingCall', (data) => {
-                currentIncomingCall = data;
-                incomingCallText.textContent = `Incoming Call from ${data.from}`;
-                incomingCallBox.classList.remove('hidden');
-            });
-
-            acceptIncomingCallBtn.onclick = () => {
-                if (currentIncomingCall) {
-                    joinJaasRoom(currentIncomingCall.callRoomName, currentIncomingCall.isAudioOnly);
-                }
-            };
-
-            declineIncomingCallBtn.onclick = () => {
-                incomingCallBox.classList.add('hidden');
-                currentIncomingCall = null;
-            };
-
-            endCallBtn.onclick = endCallUI;
-
-            function endCallUI() {
-                if (jitsiApi) {
-                    jitsiApi.dispose();
-                    jitsiApi = null;
+            function terminateCallUI() {
+                if (jitsiApiInstance) {
+                    jitsiApiInstance.dispose();
+                    jitsiApiInstance = null;
                 }
                 callOverlay.classList.add('hidden');
                 incomingCallBox.classList.add('hidden');
