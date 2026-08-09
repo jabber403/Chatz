@@ -321,9 +321,7 @@
             border-radius: 50%;
         }
 
-        .block-btn {
-            color: var(--danger-red);
-        }
+        .block-btn { color: var(--danger-red); }
 
         .call-btn:hover, .block-btn:hover {
             background-color: var(--input-bg);
@@ -411,9 +409,7 @@
             font-weight: bold;
         }
 
-        .tick-icon.read {
-            color: var(--blue-tick);
-        }
+        .tick-icon.read { color: var(--blue-tick); }
 
         .chat-img, .chat-video {
             max-width: 100%;
@@ -437,7 +433,6 @@
             word-break: break-all;
         }
 
-        /* Message Reactions Display & Picker */
         .reaction-bar {
             display: none;
             position: absolute;
@@ -452,9 +447,7 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
         }
 
-        .bubble:hover .reaction-bar {
-            display: flex;
-        }
+        .bubble:hover .reaction-bar { display: flex; }
 
         .reaction-btn {
             cursor: pointer;
@@ -462,9 +455,7 @@
             transition: transform 0.15s;
         }
 
-        .reaction-btn:hover {
-            transform: scale(1.35);
-        }
+        .reaction-btn:hover { transform: scale(1.35); }
 
         .reactions-display {
             display: flex;
@@ -520,8 +511,8 @@
             position: absolute;
             bottom: 65px;
             left: 16px;
-            width: 360px;
-            height: 360px;
+            width: 340px;
+            height: 320px;
             background-color: var(--header-bg);
             border: 1px solid var(--input-bg);
             border-radius: 12px;
@@ -563,31 +554,26 @@
         }
 
         .sticker-item {
-            font-size: 2.6rem;
+            font-size: 2.5rem;
             text-align: center;
             cursor: pointer;
             transition: transform 0.15s;
             user-select: none;
         }
 
-        .sticker-item:hover {
-            transform: scale(1.25);
-        }
+        .sticker-item:hover { transform: scale(1.25); }
 
         .gif-item {
             width: 100%;
-            height: 80px;
+            height: 75px;
             object-fit: cover;
             border-radius: 6px;
             cursor: pointer;
             transition: transform 0.15s;
         }
 
-        .gif-item:hover {
-            transform: scale(1.05);
-        }
+        .gif-item:hover { transform: scale(1.05); }
 
-        /* Voice Note Recording */
         .record-btn {
             background: none;
             border: none;
@@ -607,7 +593,7 @@
             100% { opacity: 1; }
         }
 
-        /* Incoming Call Popup */
+        /* Call Popups */
         #incomingCallBox {
             position: absolute;
             top: 20px;
@@ -632,14 +618,11 @@
             width: 100%;
         }
 
-        .call-actions button {
-            flex: 1;
-        }
+        .call-actions button { flex: 1; }
 
         .btn-success { background-color: var(--accent-green); color: var(--panel-bg); }
         .btn-danger { background-color: var(--danger-red); color: #fff; }
 
-        /* WebRTC Call Overlay */
         #callOverlay {
             position: absolute;
             top: 0;
@@ -654,10 +637,7 @@
             justify-content: center;
         }
 
-        #jitsiContainer {
-            width: 100%;
-            height: 88%;
-        }
+        #jitsiContainer { width: 100%; height: 88%; }
 
         .call-controls {
             height: 12%;
@@ -667,7 +647,6 @@
             gap: 16px;
         }
 
-        /* Mobile Responsive View */
         @media (max-width: 768px) {
             .sidebar { width: 100%; }
             .chat-area { width: 100%; }
@@ -794,10 +773,9 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        // Socket Connection Setup
         const socket = io({ reconnection: true, reconnectionDelay: 1000 });
 
-        // DOM Element Selectors
+        // DOM Elements
         const loginScreen = document.getElementById('loginScreen');
         const appContainer = document.getElementById('appContainer');
         const loginForm = document.getElementById('loginForm');
@@ -850,7 +828,7 @@
         const audioCallBtn = document.getElementById('audioCallBtn');
         const videoCallBtn = document.getElementById('videoCallBtn');
 
-        // State Tracking Variables
+        // State Tracking
         let currentUser = "";
         let currentPfp = "👤";
         let activeTarget = null;
@@ -871,7 +849,6 @@
         let audioChunks = [];
         let isRecording = false;
 
-        // Expanded Catalog of Stickers and GIFs
         const STICKERS = [
             '🔥', '👑', '🎉', '💩', '😎', '❤️', '🚀', '💯', '🍕', '🐱', '👻', '⭐',
             '🎈', '👍', '🏆', '🍔', '🐶', '🤖', '👾', '🌈', '⚡', '🥑', '🌮', '🍩',
@@ -879,18 +856,15 @@
             '🥳', '😴', '🤯', '🤩', '😇', '🙈', '🙉', '🙊', '☠️', '👽', '🤡', '👹'
         ];
 
-        const SAMPLE_GIFS = [
-            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbnFlc2p4amR2eTNqem9kcnE3OHZlYzB4Mmtic2plZnVrbjhhNzV4OCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l0HlHJGHe3yAMhdQY/giphy.gif',
-            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDdxMnRzNHU3eDRjYmVqcncybmhyMXpncHRvNmRrcXR3OTI5c3V2OCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKsjRrfIPjeiVyM/giphy.gif',
-            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExc2J1bjNsc3B6bWFndXByenR1am96aGVidDRiZHFlZXRkMmdyM2tzMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l41K3o5TKSFi88C5O/giphy.gif',
-            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3Z0bnZxeTJ5bXpzeWZkY2N4dnpsZGg3M3E4Znh1NnRxbzRzc3d0eSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/d31w24psGYeekCZy/giphy.gif',
-            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExazdzMGt4c3I5ZXU4am84N2Zzc3c0Nm0yYWhmNmd4azcxbGNrcnI0OCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l3q2K5jinAlChoCLS/giphy.gif',
-            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbDVqdzJmNXRtbGNmOHp6ZjNlZWl1NDdqYm1sdGNsbnAxdThpdTJmMSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xT0xeJpnrWC4XWblEk/giphy.gif',
-            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcXR2NW9rN3gwbWZ4ZXFxejBscjA3bnV1N2lydHVtN3YwY2E4OW40MSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/G96zt9713C12g/giphy.gif',
-            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaGcxMjlycnE2Nndrcm40eTBia3A4cTBrc2M0dzRqNm8ycGNhNmszeCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/11sBLVx287ECmQ/giphy.gif'
+        // LIST YOUR LOCAL GIF FILE NAMES HERE FROM YOUR 'gifs' FOLDER
+        const LOCAL_GIF_FILES = [
+            'gif1.gif',
+            'gif2.gif',
+            'gif3.gif',
+            'gif4.gif'
         ];
 
-        /* --- AUTOMATIC PERSISTENT AUTO-LOGIN ON PAGE LOAD --- */
+        /* Auto-Login Check */
         window.addEventListener('DOMContentLoaded', () => {
             const savedSession = localStorage.getItem('chatz_session_token');
             if (savedSession) {
@@ -906,10 +880,17 @@
             }
         });
 
-        /* --- SOUND SYNTHESIS ENGINE --- */
+        /* Safe Alert Audio for Mobile */
         function playAlertSound() {
             try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
 
@@ -925,36 +906,42 @@
 
                 osc.start();
                 osc.stop(ctx.currentTime + 0.25);
-            } catch(e) {}
+            } catch(e) {
+                console.log('Audio playback ignored by browser policy');
+            }
         }
 
-        /* --- BROWSER NATIVE NOTIFICATIONS SYSTEM --- */
+        /* Mobile-Safe Notifications */
         function requestNotificationPermission() {
-            if ("Notification" in window) {
-                Notification.requestPermission().then(permission => {
-                    if (permission === "granted") {
-                        enableNotifBtn.textContent = "🔔 Alerts Active";
-                        enableNotifBtn.style.color = "var(--accent-green)";
-                    }
-                });
-            }
+            try {
+                if ("Notification" in window && Notification.permission !== "granted") {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === "granted") {
+                            enableNotifBtn.textContent = "🔔 Alerts Active";
+                            enableNotifBtn.style.color = "var(--accent-green)";
+                        }
+                    }).catch(err => console.log('Notification permission denied or blocked'));
+                }
+            } catch(e) {}
         }
 
         enableNotifBtn.onclick = requestNotificationPermission;
 
         function triggerNativeNotification(title, bodyText) {
             playAlertSound();
-            if ("Notification" in window && Notification.permission === "granted") {
-                if (document.hidden || !document.hasFocus()) {
-                    new Notification(title, {
-                        body: bodyText,
-                        icon: 'https://cdn-icons-png.flaticon.com/512/134/134937.png'
-                    });
+            try {
+                if ("Notification" in window && Notification.permission === "granted") {
+                    if (document.hidden || !document.hasFocus()) {
+                        new Notification(title, {
+                            body: bodyText,
+                            icon: 'https://cdn-icons-png.flaticon.com/512/134/134937.png'
+                        });
+                    }
                 }
-            }
+            } catch(e) {}
         }
 
-        /* --- END-TO-END (XOR + BASE64) ENCRYPTION ENGINE --- */
+        /* Encryption */
         function encryptDecrypt(text, keyString) {
             let result = '';
             for (let i = 0; i < text.length; i++) {
@@ -978,14 +965,23 @@
             return [userA, userB].sort().join('-chatz-secure-key-2026');
         }
 
-        /* --- PROFILE PICTURE PREVIEW HANDLERS --- */
+        /* Profile Picture & Background Image Resizing */
         pfpFileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (evt) => {
-                    currentPfp = evt.target.result;
-                    pfpPreview.innerHTML = `<img src="${currentPfp}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 150;
+                        canvas.height = 150;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, 150, 150);
+                        currentPfp = canvas.toDataURL('image/jpeg', 0.7);
+                        pfpPreview.innerHTML = `<img src="${currentPfp}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+                    };
+                    img.src = evt.target.result;
                 };
                 reader.readAsDataURL(file);
             }
@@ -1013,7 +1009,7 @@
             appContainer.classList.remove('chat-active');
         };
 
-        /* --- DRAWER CONTROLS --- */
+        /* Stickers & GIFs Drawer */
         togglePickerBtn.onclick = () => {
             mediaPickerDrawer.classList.toggle('hidden');
             loadStickers();
@@ -1046,22 +1042,27 @@
             });
         }
 
+        // LOAD LOCAL GIFS FROM THE gifs/ FOLDER
         function loadGifs() {
             pickerContent.innerHTML = '';
             pickerContent.style.gridTemplateColumns = 'repeat(2, 1fr)';
-            SAMPLE_GIFS.forEach(url => {
+            LOCAL_GIF_FILES.forEach(fileName => {
+                const gifPath = `/gifs/${fileName}`;
                 const img = document.createElement('img');
-                img.src = url;
+                img.src = gifPath;
                 img.classList.add('gif-item');
+                img.onerror = () => {
+                    img.style.display = 'none'; // Hide if file not found in gifs folder yet
+                };
                 img.onclick = () => {
-                    sendDirectPayload('', url, 'image/gif', 'animation.gif');
+                    sendDirectPayload('', gifPath, 'image/gif', fileName);
                     mediaPickerDrawer.classList.add('hidden');
                 };
                 pickerContent.appendChild(img);
             });
         }
 
-        /* --- VOICE NOTE RECORDING ENGINE --- */
+        /* Voice Notes */
         voiceRecordBtn.onclick = async () => {
             if (!isRecording) {
                 try {
@@ -1094,7 +1095,7 @@
             }
         };
 
-        /* --- LOGIN & SESSION HANDLERS --- */
+        /* Login & Sessions */
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             currentUser = usernameInput.value.trim();
@@ -1146,7 +1147,7 @@
             location.reload();
         });
 
-        /* --- USER BLOCKING UI HANDLERS --- */
+        /* Blocking */
         blockToggleBtn.onclick = () => {
             if (!activeTarget || isGroupChat) return;
 
@@ -1288,7 +1289,7 @@
             socket.emit('loadConversation', { target, isGroup: isGroupChat });
         }
 
-        /* --- TYPING INDICATORS --- */
+        /* Typing Indicators */
         messageInput.addEventListener('input', () => {
             if (!activeTarget) return;
 
@@ -1316,7 +1317,7 @@
             alert(data.text);
         });
 
-        /* --- FILE ATTACHMENTS & TRANSMISSION --- */
+        /* File Sending */
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
@@ -1368,7 +1369,7 @@
             }
         });
 
-        /* --- MESSAGE RENDERING & RECEIPT ENGINE --- */
+        /* Message Handling */
         socket.on('conversationHistory', (data) => {
             if (data.target === activeTarget) {
                 chatBody.innerHTML = '';
@@ -1509,7 +1510,7 @@
             socket.emit('addReaction', { msgId, emoji, target: activeTarget, isGroup: isGroupChat });
         };
 
-        /* --- WEBRTC AUDIO/VIDEO CALLING (JITSI API) --- */
+        /* Calls */
         function launchCall(startWithAudioOnly) {
             if (!activeTarget) return;
 
