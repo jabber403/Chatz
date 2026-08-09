@@ -31,60 +31,67 @@ db.serialize(() => {
 
 app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'));
 
+// Maps normalized username -> socket id
 const connectedUsers = {};
+
+function broadcastUserList() {
+    db.all('SELECT username, pfp FROM users', [], (err, rows) => {
+        if (err) return;
+        const allUsers = (rows || []).map(row => ({
+            username: row.username,
+            pfp: row.pfp || '👤',
+            isOnline: !!connectedUsers[row.username.toLowerCase()]
+        }));
+        io.emit('updateUserList', allUsers);
+    });
+}
 
 io.on('connection', (socket) => {
 
     socket.on('login', (data) => {
-        const { username, password, pfp, isSignup } = data;
+        const rawUsername = (data.username || '').trim();
+        const password = data.password || '';
+        const pfp = data.pfp || '👤';
 
-        db.get('SELECT * FROM users WHERE username = ?', [username], (err, row) => {
+        if (!rawUsername) {
+            return socket.emit('loginResponse', { success: false, msg: 'Username cannot be empty.' });
+        }
+
+        const normUser = rawUsername.toLowerCase();
+
+        db.get('SELECT * FROM users WHERE LOWER(username) = ?', [normUser], (err, row) => {
             if (err) return socket.emit('loginResponse', { success: false, msg: 'Database error!' });
 
-            if (isSignup) {
-                if (row) {
-                    return socket.emit('loginResponse', { success: false, msg: 'Username already taken. Please choose another or log in.' });
-                }
-                db.run('INSERT INTO users (username, password, pfp) VALUES (?, ?, ?)', [username, password, pfp], (err) => {
-                    if (err) socket.emit('loginResponse', { success: false, msg: 'Account creation failed.' });
-                    else completeLogin(pfp);
-                });
-            } else {
-                if (!row) {
-                    return socket.emit('loginResponse', { success: false, msg: 'Account not found. Please sign up first!' });
-                }
+            if (row) {
                 if (row.password === password) {
-                    if (pfp && pfp !== '👤') {
-                        db.run('UPDATE users SET pfp = ? WHERE username = ?', [pfp, username]);
-                    }
-                    completeLogin(row.pfp || pfp);
+                    db.run('UPDATE users SET pfp = ? WHERE LOWER(username) = ?', [pfp, normUser]);
+                    completeLogin(row.username, pfp);
                 } else {
                     socket.emit('loginResponse', { success: false, msg: 'Incorrect password!' });
                 }
+            } else {
+                db.run('INSERT INTO users (username, password, pfp) VALUES (?, ?, ?)', [rawUsername, password, pfp], (err) => {
+                    if (err) socket.emit('loginResponse', { success: false, msg: 'Account creation failed.' });
+                    else completeLogin(rawUsername, pfp);
+                });
             }
         });
 
-        function completeLogin(userPfp) {
+        function completeLogin(username, userPfp) {
             socket.username = username;
             socket.pfp = userPfp;
-            connectedUsers[username] = socket.id;
+            connectedUsers[username.toLowerCase()] = socket.id;
 
             socket.emit('loginResponse', { success: true, user: { username, pfp: userPfp } });
-            io.emit('updateUserList', getUsersList());
+            broadcastUserList();
         }
     });
 
-    function getUsersList() {
-        return Object.keys(connectedUsers).map(u => ({
-            username: u,
-            pfp: io.sockets.sockets.get(connectedUsers[u])?.pfp || '👤'
-        }));
-    }
-
     socket.on('joinGroup', (roomName) => {
         if (!socket.username || !roomName) return;
-        socket.join(roomName);
-        socket.emit('groupJoined', roomName);
+        const room = roomName.trim();
+        socket.join(room);
+        socket.emit('groupJoined', room);
     });
 
     socket.on('loadConversation', ({ target, isGroup }) => {
@@ -95,12 +102,15 @@ io.on('connection', (socket) => {
             query = `SELECT id, sender, recipient, room, message, fileData, fileName, fileType, status, reactions, strftime('%H:%M', timestamp, 'localtime') as time FROM messages WHERE room = ? ORDER BY id ASC`;
             params = [target];
         } else {
-            query = `SELECT id, sender, recipient, room, message, fileData, fileName, fileType, status, reactions, strftime('%H:%M', timestamp, 'localtime') as time FROM messages WHERE (sender = ? AND recipient = ?) OR (sender = ? AND recipient = ?) ORDER BY id ASC`;
-            params = [socket.username, target, target, socket.username];
+            query = `SELECT id, sender, recipient, room, message, fileData, fileName, fileType, status, reactions, strftime('%H:%M', timestamp, 'localtime') as time FROM messages WHERE (LOWER(sender) = ? AND LOWER(recipient) = ?) OR (LOWER(sender) = ? AND LOWER(recipient) = ?) ORDER BY id ASC`;
+            const me = socket.username.toLowerCase();
+            const other = target.toLowerCase();
+            params = [me, other, other, me];
 
-            db.run(`UPDATE messages SET status = 'read' WHERE sender = ? AND recipient = ? AND status != 'read'`, [target, socket.username], () => {
-                if (connectedUsers[target]) {
-                    io.to(connectedUsers[target]).emit('messagesMarkedRead', { by: socket.username });
+            db.run(`UPDATE messages SET status = 'read' WHERE LOWER(sender) = ? AND LOWER(recipient) = ? AND status != 'read'`, [other, me], () => {
+                const targetSocketId = connectedUsers[other];
+                if (targetSocketId) {
+                    io.to(targetSocketId).emit('messagesMarkedRead', { by: socket.username });
                 }
             });
         }
@@ -119,7 +129,8 @@ io.on('connection', (socket) => {
         const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
         
         let initialStatus = 'sent';
-        if (data.recipient && connectedUsers[data.recipient]) {
+        const recipientNorm = data.recipient ? data.recipient.toLowerCase() : null;
+        if (recipientNorm && connectedUsers[recipientNorm]) {
             initialStatus = 'delivered';
         }
 
@@ -145,8 +156,8 @@ io.on('connection', (socket) => {
             if (data.room) {
                 io.to(data.room).emit('receiveMessage', payload);
             } else if (data.recipient) {
-                if (connectedUsers[data.recipient]) {
-                    io.to(connectedUsers[data.recipient]).emit('receiveMessage', payload);
+                if (connectedUsers[recipientNorm]) {
+                    io.to(connectedUsers[recipientNorm]).emit('receiveMessage', payload);
                 }
                 socket.emit('receiveMessage', payload);
             }
@@ -165,7 +176,8 @@ io.on('connection', (socket) => {
                     if (isGroup) {
                         io.to(target).emit('reactionUpdated', updatePayload);
                     } else {
-                        if (connectedUsers[target]) io.to(connectedUsers[target]).emit('reactionUpdated', updatePayload);
+                        const targetNorm = target.toLowerCase();
+                        if (connectedUsers[targetNorm]) io.to(connectedUsers[targetNorm]).emit('reactionUpdated', updatePayload);
                         socket.emit('reactionUpdated', updatePayload);
                     }
                 });
@@ -176,55 +188,60 @@ io.on('connection', (socket) => {
     socket.on('typing', ({ target, isGroup, isTyping }) => {
         if (isGroup) {
             socket.to(target).emit('userTyping', { from: socket.username, room: target, isTyping });
-        } else if (connectedUsers[target]) {
-            io.to(connectedUsers[target]).emit('userTyping', { from: socket.username, isTyping });
+        } else {
+            const targetNorm = target.toLowerCase();
+            if (connectedUsers[targetNorm]) {
+                io.to(connectedUsers[targetNorm]).emit('userTyping', { from: socket.username, isTyping });
+            }
         }
     });
 
     socket.on('markAsRead', ({ sender }) => {
-        db.run(`UPDATE messages SET status = 'read' WHERE sender = ? AND recipient = ? AND status != 'read'`, [sender, socket.username], () => {
-            if (connectedUsers[sender]) {
-                io.to(connectedUsers[sender]).emit('messagesMarkedRead', { by: socket.username });
+        const me = socket.username.toLowerCase();
+        const senderNorm = sender.toLowerCase();
+        db.run(`UPDATE messages SET status = 'read' WHERE LOWER(sender) = ? AND LOWER(recipient) = ? AND status != 'read'`, [senderNorm, me], () => {
+            if (connectedUsers[senderNorm]) {
+                io.to(connectedUsers[senderNorm]).emit('messagesMarkedRead', { by: socket.username });
             }
         });
     });
 
-    socket.on('startCallNotification', ({ target, isGroup, callRoomName, isAudioOnly, senderPfp }) => {
+    socket.on('startCallNotification', ({ target, isGroup, callRoomName, isAudioOnly }) => {
         if (isGroup) {
             socket.to(target).emit('incomingCall', {
                 from: socket.username,
                 callRoomName,
                 isAudioOnly,
                 isGroup: true,
-                groupName: target,
-                senderPfp
+                groupName: target
             });
         } else {
-            if (connectedUsers[target]) {
-                io.to(connectedUsers[target]).emit('incomingCall', {
+            const targetNorm = target.toLowerCase();
+            if (connectedUsers[targetNorm]) {
+                io.to(connectedUsers[targetNorm]).emit('incomingCall', {
                     from: socket.username,
                     callRoomName,
                     isAudioOnly,
-                    isGroup: false,
-                    senderPfp
+                    isGroup: false
                 });
             }
         }
     });
 
     socket.on('declineCall', ({ to }) => {
-        if (connectedUsers[to]) {
-            io.to(connectedUsers[to]).emit('callDeclined', { from: socket.username });
+        const toNorm = to.toLowerCase();
+        if (connectedUsers[toNorm]) {
+            io.to(connectedUsers[toNorm]).emit('callDeclined', { from: socket.username });
         }
     });
 
     socket.on('disconnect', () => {
         if (socket.username) {
-            delete connectedUsers[socket.username];
-            io.emit('updateUserList', getUsersList());
+            delete connectedUsers[socket.username.toLowerCase()];
+            broadcastUserList();
         }
     });
 });
 
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, '0.0.0.0', () => console.log(`WhatsApp Chatz running on port ${PORT}`));
+http.listen(PORT, () => console.log(`WhatsApp Chatz running on http://localhost:${PORT}`));
