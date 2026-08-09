@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatz</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: #0c1317; color: #e9edef; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+
+        .hidden { display: none !important; }
+
+        #loginScreen { background-color: #111b21; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; }
+        #loginScreen h2 { color: #00a884; margin-bottom: 20px; }
+        .login-form { display: flex; flex-direction: column; gap: 12px; }
+        input, select { background-color: #2a3942; border: none; color: #d1d7db; padding: 12px; border-radius: 8px; outline: none; }
+        button { background-color: #00a884; color: #111b21; font-weight: 700; padding: 12px; border: none; border-radius: 8px; cursor: pointer; }
+
+        .pfp-preview { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #00a884; margin: 0 auto 10px; background: #202c33; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; }
+
+        #appContainer { width: 100vw; height: 100vh; display: flex; background-color: #111b21; }
+        .sidebar { width: 320px; background-color: #111b21; border-right: 1px solid #222d34; display: flex; flex-direction: column; }
+        .sidebar-header { background-color: #202c33; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .user-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: #2a3942; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+
+        .group-controls { padding: 10px; border-bottom: 1px solid #222d34; display: flex; gap: 8px; }
+        .group-controls input { flex: 1; padding: 8px; font-size: 0.85rem; }
+        .group-controls button { padding: 8px 12px; font-size: 0.85rem; }
+
+        .contacts-list { flex: 1; overflow-y: auto; }
+        .section-header { padding: 8px 16px; font-size: 0.75rem; text-transform: uppercase; color: #8696a0; font-weight: bold; background-color: #182229; }
+        .contact-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #1f2c33; }
+        .contact-item.active { background-color: #2a3942; }
+
+        .chat-area { flex: 1; display: flex; flex-direction: column; background-color: #0b141a; position: relative; }
+        .chat-header { background-color: #202c33; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #222d34; }
+        .chat-header-actions { display: flex; gap: 12px; align-items: center; }
+        .call-btn { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: #00a884; }
+
+        .chat-body { 
+            flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; 
+            background-color: #0b141a; background-size: cover; background-position: center; transition: background 0.3s;
+        }
+
+        .bubble { max-width: 65%; padding: 8px 12px; border-radius: 8px; font-size: 0.9rem; word-wrap: break-word; display: flex; flex-direction: column; position: relative; }
+        .bubble.outgoing { align-self: flex-end; background-color: #005c4b; }
+        .bubble.incoming { align-self: flex-start; background-color: #202c33; }
+        .sender-tag { font-size: 0.75rem; font-weight: bold; color: #e52e71; margin-bottom: 4px; }
+        
+        .bubble-footer { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 4px; }
+        .bubble-time { font-size: 0.65rem; color: #8696a0; }
+        .tick-icon { font-size: 0.75rem; color: #8696a0; font-weight: bold; }
+        .tick-icon.read { color: #53bdeb; }
+
+        /* REACTION OVERLAY */
+        .reaction-bar { display: none; position: absolute; top: -35px; right: 0; background: #202c33; border: 1px solid #00a884; border-radius: 20px; padding: 2px 8px; gap: 6px; z-index: 50; }
+        .bubble:hover .reaction-bar { display: flex; }
+        .reaction-btn { cursor: pointer; font-size: 1rem; transition: transform 0.1s; }
+        .reaction-btn:hover { transform: scale(1.3); }
+        .reactions-display { display: flex; gap: 4px; font-size: 0.75rem; margin-top: 4px; background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 10px; width: fit-content; }
+
+        .chat-footer { background-color: #202c33; padding: 10px 16px; display: flex; align-items: center; gap: 10px; position: relative; }
+        .chat-footer input[type="text"] { flex: 1; background-color: #2a3942; }
+
+        /* GIF & STICKER PICKER POPUP */
+        #mediaPickerDrawer {
+            position: absolute; bottom: 65px; left: 16px; width: 320px; height: 300px;
+            background-color: #202c33; border: 1px solid #2a3942; border-radius: 12px;
+            display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100;
+        }
+        .picker-tabs { display: flex; background: #111b21; border-bottom: 1px solid #2a3942; }
+        .picker-tab { flex: 1; padding: 8px; text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: bold; color: #8696a0; }
+        .picker-tab.active { color: #00a884; border-bottom: 2px solid #00a884; }
+        .picker-content { flex: 1; padding: 10px; overflow-y: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .sticker-item { font-size: 2.5rem; text-align: center; cursor: pointer; transition: transform 0.1s; }
+        .sticker-item:hover { transform: scale(1.2); }
+        .gif-item { width: 100%; height: 70px; object-fit: cover; border-radius: 6px; cursor: pointer; }
+
+        /* RECORDING VOICE NOTE UI */
+        .record-btn { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: #00a884; }
+        .record-btn.recording { color: #ea4335; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        #incomingCallBox {
+            position: absolute; top: 20px; right: 20px; z-index: 300;
+            background-color: #202c33; border: 2px solid #00a884; border-radius: 12px;
+            padding: 16px; width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center;
+        }
+        .call-actions { display: flex; gap: 10px; width: 100%; }
+        .call-actions button { flex: 1; }
+        .btn-success { background-color: #00a884; color: #111b21; }
+        .btn-danger { background-color: #ea4335; color: #fff; }
+
+        #callOverlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(11, 20, 26, 0.98); z-index: 200;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        #jitsiContainer { width: 100%; height: 85%; }
+        .call-controls { height: 15%; display: flex; align-items: center; justify-content: center; gap: 16px; }
+    </style>
+    <script src="https://meet.jit.si/external_api.js"></script>
+</head>
+<body>
+
+    <div id="loginScreen">
+        <h2>WhatsApp Chatz</h2>
+        <div class="pfp-preview" id="pfpPreview">👤</div>
+        <form id="loginForm" class="login-form">
+            <input type="text" id="usernameInput" placeholder="Username" required>
+            <input type="password" id="passwordInput" placeholder="Password" required>
+            
+            <label style="font-size:0.8rem; color:#8696a0; text-align:left;">Custom Profile Picture (File or Emoji):</label>
+            <input type="file" id="pfpFileInput" accept="image/*">
+            <input type="text" id="pfpEmojiInput" placeholder="Or enter emoji (e.g. 🦊, 🚀, 👑)">
+
+            <button type="submit">Start Chatting</button>
+        </form>
+    </div>
+
+    <div id="appContainer" class="hidden">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-info">
+                    <div class="user-avatar" id="myAvatarDisplay">👤</div>
+                    <span id="myUsername" style="font-weight: 600;">Me</span>
+                </div>
+                <span style="font-size: 0.75rem; color: #00a884;">🔒 Online</span>
+            </div>
+
+            <div class="group-controls">
+                <input type="text" id="groupNameInput" placeholder="Group Name...">
+                <button id="joinGroupBtn">Join/Create</button>
+            </div>
+
+            <div class="contacts-list">
+                <div class="section-header">Group Rooms</div>
+                <div id="groupsList"></div>
+
+                <div class="section-header">Direct Messages</div>
+                <div id="contactsList"></div>
+            </div>
+        </div>
+
+        <div class="chat-area">
+            <div id="emptyView" style="flex:1; display:flex; align-items:center; justify-content:center; color:#8696a0;">
+                Select a direct message or group room to start chatting.
+            </div>
+
+            <div id="activeChatView" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
+                <div class="chat-header">
+                    <div>
+                        <div id="activeContactName" style="font-weight: 600;">User</div>
+                        <div id="activeStatusSub" style="font-size: 0.75rem; color: #00a884;">🔒 Encrypted Channel</div>
+                    </div>
+                    <div class="chat-header-actions">
+                        <label title="Set Custom Background" style="cursor:pointer; font-size:1.2rem;">
+                            🎨 <input type="file" id="bgFileInput" accept="image/*" style="display:none;">
+                        </label>
+                        <button class="call-btn" id="audioCallBtn" title="Audio Call">📞</button>
+                        <button class="call-btn" id="videoCallBtn" title="Video Call">📹</button>
+                    </div>
+                </div>
+
+                <div class="chat-body" id="chatBody"></div>
+
+                <div id="mediaPickerDrawer" class="hidden">
+                    <div class="picker-tabs">
+                        <div class="picker-tab active" id="stickersTabBtn">Stickers</div>
+                        <div class="picker-tab" id="gifsTabBtn">GIFs</div>
+                    </div>
+                    <div class="picker-content" id="pickerContent"></div>
+                </div>
+
+                <form id="chatForm" class="chat-footer">
+                    <button type="button" id="togglePickerBtn" style="background:none; border:none; font-size:1.3rem; cursor:pointer;" title="Stickers & GIFs">👾</button>
+                    <label style="cursor:pointer; font-size:1.2rem;" title="Attach File">
+                        📎 <input type="file" id="fileInput" style="display:none;">
+                    </label>
+                    <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off">
+                    <button type="button" class="record-btn" id="voiceRecordBtn" title="Record Voice Note">🎙️</button>
+                    <button type="submit" style="border-radius: 50%; width:40px; height:40px;">➤</button>
+                </form>
+            </div>
+
+            <div id="incomingCallBox" class="hidden">
+                <div id="incomingCallText" style="font-weight: bold;">Incoming Call...</div>
+                <div class="call-actions">
+                    <button id="acceptIncomingCallBtn" class="btn-success">Accept</button>
+                    <button id="declineIncomingCallBtn" class="btn-danger">Decline</button>
+                </div>
+            </div>
+
+            <div id="callOverlay" class="hidden">
+                <div id="jitsiContainer"></div>
+                <div class="call-controls">
+                    <button id="endCallBtn" class="btn-danger">Leave Call</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io({ reconnection: true, reconnectionDelay: 1000 });
+
+        const loginScreen = document.getElementById('loginScreen');
+        const appContainer = document.getElementById('appContainer');
+        const loginForm = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('usernameInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const pfpFileInput = document.getElementById('pfpFileInput');
+        const pfpEmojiInput = document.getElementById('pfpEmojiInput');
+        const pfpPreview = document.getElementById('pfpPreview');
+
+        const myUsername = document.getElementById('myUsername');
+        const myAvatarDisplay = document.getElementById('myAvatarDisplay');
+        const contactsList = document.getElementById('contactsList');
+        const groupsList = document.getElementById('groupsList');
+        const groupNameInput = document.getElementById('groupNameInput');
+        const joinGroupBtn = document.getElementById('joinGroupBtn');
+
+        const emptyView = document.getElementById('emptyView');
+        const activeChatView = document.getElementById('activeChatView');
+        const activeContactName = document.getElementById('activeContactName');
+        const activeStatusSub = document.getElementById('activeStatusSub');
+        const chatBody = document.getElementById('chatBody');
+        const chatForm = document.getElementById('chatForm');
+        const messageInput = document.getElementById('messageInput');
+        const fileInput = document.getElementById('fileInput');
+        const bgFileInput = document.getElementById('bgFileInput');
+
+        const mediaPickerDrawer = document.getElementById('mediaPickerDrawer');
+        const togglePickerBtn = document.getElementById('togglePickerBtn');
+        const stickersTabBtn = document.getElementById('stickersTabBtn');
+        const gifsTabBtn = document.getElementById('gifsTabBtn');
+        const pickerContent = document.getElementById('pickerContent');
+
+        const voiceRecordBtn = document.getElementById('voiceRecordBtn');
+
+        const incomingCallBox = document.getElementById('incomingCallBox');
+        const incomingCallText = document.getElementById('incomingCallText');
+        const acceptIncomingCallBtn = document.getElementById('acceptIncomingCallBtn');
+        const declineIncomingCallBtn = document.getElementById('declineIncomingCallBtn');
+
+        const callOverlay = document.getElementById('callOverlay');
+        const jitsiContainer = document.getElementById('jitsiContainer');
+        const endCallBtn = document.getElementById('endCallBtn');
+        const audioCallBtn = document.getElementById('audioCallBtn');
+        const videoCallBtn = document.getElementById('videoCallBtn');
+
+        let currentUser = "";
+        let currentPfp = "👤";
+        let activeTarget = null;
+        let isGroupChat = false;
+        let joinedGroups = new Set();
+        let jitsiApi = null;
+        let currentIncomingCall = null;
+        let typingTimeout = null;
+
+        let selectedFileData = "";
+        let selectedFileName = "";
+        let selectedFileType = "";
+
+        // Voice Recording Vars
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+
+        const STICKERS = ['🔥', '👑', '🎉', '💩', '😎', '❤️', '🚀', '💯', '🍕', '🐱', '👻', '⭐'];
+        const SAMPLE_GIFS = [
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbnFlc2p4amR2eTNqem9kcnE3OHZlYzB4Mmtic2plZnVrbjhhNzV4OCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l0HlHJGHe3yAMhdQY/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDdxMnRzNHU3eDRjYmVqcncybmhyMXpncHRvNmRrcXR3OTI5c3V2OCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKsjRrfIPjeiVyM/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExc2J1bjNsc3B6bWFndXByenR1am96aGVidDRiZHFlZXRkMmdyM2tzMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l41K3o5TKSFi88C5O/giphy.gif'
+        ];
+
+        pfpFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    currentPfp = evt.target.result;
+                    pfpPreview.innerHTML = `<img src="${currentPfp}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        pfpEmojiInput.addEventListener('input', (e) => {
+            if (e.target.value.trim()) {
+                currentPfp = e.target.value.trim();
+                pfpPreview.innerHTML = currentPfp;
+            }
+        });
+
+        bgFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    chatBody.style.backgroundImage = `url(${evt.target.result})`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // STICKER & GIF PICKER UI
+        togglePickerBtn.onclick = () => {
+            mediaPickerDrawer.classList.toggle('hidden');
+            loadStickers();
+        };
+
+        stickersTabBtn.onclick = () => {
+            stickersTabBtn.classList.add('active');
+            gifsTabBtn.classList.remove('active');
+            loadStickers();
+        };
+
+        gifsTabBtn.onclick = () => {
+            gifsTabBtn.classList.add('active');
+            stickersTabBtn.classList.remove('active');
+            loadGifs();
+        };
+
+        function loadStickers() {
+            pickerContent.innerHTML = '';
+            pickerContent.style.gridTemplateColumns = 'repeat(4, 1fr)';
+            STICKERS.forEach(stk => {
+                const div = document.createElement('div');
+                div.classList.add('sticker-item');
+                div.textContent = stk;
+                div.onclick = () => {
+                    sendDirectPayload('', stk, 'sticker', 'sticker.txt');
+                    mediaPickerDrawer.classList.add('hidden');
+                };
+                pickerContent.appendChild(div);
+            });
+        }
+
+        function loadGifs() {
+            pickerContent.innerHTML = '';
+            pickerContent.style.gridTemplateColumns = 'repeat(2, 1fr)';
+            SAMPLE_GIFS.forEach(url => {
+                const img = document.createElement('img');
+                img.src = url;
+                img.classList.add('gif-item');
+                img.onclick = () => {
+                    sendDirectPayload('', url, 'image/gif', 'animation.gif');
+                    mediaPickerDrawer.classList.add('hidden');
+                };
+                pickerContent.appendChild(img);
+            });
+        }
+
+        // VOICE NOTE RECORDING LOGIC
+        voiceRecordBtn.onclick = async () => {
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.onload = (evt) => {
+                            sendDirectPayload('', evt.target.result, 'audio/webm', 'voice-note.webm');
+                        };
+                        reader.readAsDataURL(audioBlob);
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    voiceRecordBtn.classList.add('recording');
+                    voiceRecordBtn.title = "Click to Stop and Send";
+                } catch(e) {
+                    alert('Microphone access is required to record voice notes.');
+                }
+            } else {
+                mediaRecorder.stop();
+                isRecording = false;
+                voiceRecordBtn.classList.remove('recording');
+                voiceRecordBtn.title = "Record Voice Note";
+            }
+        };
+
+        function encryptDecrypt(text, keyString) {
+            let result = '';
+            for (let i = 0; i < text.length; i++) {
+                result += String.fromCharCode(text.charCodeAt(i) ^ keyString.charCodeAt(i % keyString.length));
+            }
+            return btoa(result);
+        }
+
+        function decrypt(cipherBase64, keyString) {
+            try {
+                let decoded = atob(cipherBase64);
+                let result = '';
+                for (let i = 0; i < decoded.length; i++) {
+                    result += String.fromCharCode(decoded.charCodeAt(i) ^ keyString.charCodeAt(i % keyString.length));
+                }
+                return result;
+            } catch(e) { return cipherBase64; }
+        }
+
+        function getSharedSecret(userA, userB) {
+            return [userA, userB].sort().join('-secret-key-2026');
+        }
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            currentUser = usernameInput.value.trim();
+            socket.emit('login', { username: currentUser, password: passwordInput.value, pfp: currentPfp });
+        });
+
+        socket.on('loginResponse', (res) => {
+            if (res.success) {
+                myUsername.textContent = currentUser;
+                if (currentPfp.startsWith('data:image')) {
+                    myAvatarDisplay.innerHTML = `<img src="${currentPfp}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+                } else {
+                    myAvatarDisplay.textContent = currentPfp;
+                }
+                loginScreen.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+            } else alert(res.msg);
+        });
+
+        joinGroupBtn.onclick = () => {
+            const roomName = groupNameInput.value.trim();
+            if (roomName) {
+                socket.emit('joinGroup', roomName);
+                groupNameInput.value = '';
+            }
+        };
+
+        socket.on('groupJoined', (roomName) => {
+            joinedGroups.add(roomName);
+            renderGroupsList();
+            openChat(roomName, true);
+        });
+
+        function renderGroupsList() {
+            groupsList.innerHTML = '';
+            joinedGroups.forEach(room => {
+                const item = document.createElement('div');
+                item.classList.add('contact-item');
+                if (isGroupChat && activeTarget === room) item.classList.add('active');
+                item.innerHTML = `<span style="font-size:1.3rem">👥</span> <b>#${room}</b>`;
+                item.onclick = () => openChat(room, true);
+                groupsList.appendChild(item);
+            });
+        }
+
+        socket.on('updateUserList', (userList) => {
+            contactsList.innerHTML = '';
+            userList.forEach(user => {
+                if (user.username !== currentUser) {
+                    const item = document.createElement('div');
+                    item.classList.add('contact-item');
+                    if (!isGroupChat && activeTarget === user.username) item.classList.add('active');
+
+                    const avatarHtml = user.pfp.startsWith('data:image') 
+                        ? `<img src="${user.pfp}" style="width:30px; height:30px; border-radius:50%; object-fit:cover;">`
+                        : `<span style="font-size:1.3rem">${user.pfp || '👤'}</span>`;
+
+                    item.innerHTML = `${avatarHtml} <b>${user.username}</b> <span style="margin-left:auto; font-size:0.7rem; color:#00a884;">● online</span>`;
+                    item.onclick = () => openChat(user.username, false);
+                    contactsList.appendChild(item);
+                }
+            });
+        });
+
+        function openChat(target, groupFlag) {
+            activeTarget = target;
+            isGroupChat = groupFlag;
+
+            activeContactName.textContent = isGroupChat ? `#${target}` : target;
+            activeStatusSub.textContent = isGroupChat ? '👥 Public Group Chat' : '🔒 End-to-End Encrypted Direct Message';
+
+            emptyView.classList.add('hidden');
+            activeChatView.classList.remove('hidden');
+            chatBody.innerHTML = '';
+
+            renderGroupsList();
+            socket.emit('loadConversation', { target, isGroup: isGroupChat });
+        }
+
+        messageInput.addEventListener('input', () => {
+            if (!activeTarget) return;
+
+            socket.emit('typing', { target: activeTarget, isGroup: isGroupChat, isTyping: true });
+
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                socket.emit('typing', { target: activeTarget, isGroup: isGroupChat, isTyping: false });
+            }, 1500);
+        });
+
+        socket.on('userTyping', (data) => {
+            if ((!isGroupChat && data.from === activeTarget) || (isGroupChat && data.room === activeTarget)) {
+                if (data.isTyping) {
+                    activeStatusSub.textContent = `💬 ${data.from} is typing...`;
+                    activeStatusSub.style.color = '#38bdf8';
+                } else {
+                    activeStatusSub.textContent = isGroupChat ? '👥 Public Group Chat' : '🔒 End-to-End Encrypted Direct Message';
+                    activeStatusSub.style.color = '#00a884';
+                }
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                selectedFileName = file.name;
+                selectedFileType = file.type;
+
+                const reader = new FileReader();
+                reader.onload = (evt) => selectedFileData = evt.target.result;
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function sendDirectPayload(msgText, fileData, fileType, fileName) {
+            if (!activeTarget) return;
+            let msgData = msgText;
+
+            if (!isGroupChat && msgText) {
+                const secret = getSharedSecret(currentUser, activeTarget);
+                msgData = encryptDecrypt(msgText, secret);
+            }
+
+            socket.emit('sendMessage', {
+                recipient: isGroupChat ? null : activeTarget,
+                room: isGroupChat ? activeTarget : null,
+                message: msgData,
+                fileData: fileData || '',
+                fileName: fileName || '',
+                fileType: fileType || ''
+            });
+        }
+
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = messageInput.value.trim();
+
+            if (text || selectedFileData) {
+                sendDirectPayload(text, selectedFileData, selectedFileType, selectedFileName);
+                messageInput.value = '';
+                fileInput.value = '';
+                selectedFileData = '';
+                selectedFileName = '';
+                selectedFileType = '';
+            }
+        });
+
+        socket.on('conversationHistory', (data) => {
+            if (data.target === activeTarget) {
+                chatBody.innerHTML = '';
+                const secret = !isGroupChat ? getSharedSecret(currentUser, activeTarget) : null;
+
+                data.history.forEach(item => {
+                    item.decryptedMessage = (!isGroupChat && item.message) ? decrypt(item.message, secret) : item.message;
+                    appendBubble(item);
+                });
+            }
+        });
+
+        socket.on('receiveMessage', (data) => {
+            const matchesDirect = !isGroupChat && ((data.sender === currentUser && data.recipient === activeTarget) || (data.sender === activeTarget && data.recipient === currentUser));
+            const matchesGroup = isGroupChat && data.room === activeTarget;
+
+            if (matchesDirect || matchesGroup) {
+                const secret = !isGroupChat ? getSharedSecret(currentUser, activeTarget) : null;
+                data.decryptedMessage = (!isGroupChat && data.message) ? decrypt(data.message, secret) : data.message;
+                appendBubble(data);
+
+                if (!isGroupChat && data.sender === activeTarget) {
+                    socket.emit('markAsRead', { sender: activeTarget });
+                }
+            }
+        });
+
+        socket.on('messagesMarkedRead', (data) => {
+            if (!isGroupChat && data.by === activeTarget) {
+                document.querySelectorAll('.tick-icon').forEach(tick => {
+                    tick.textContent = '✓✓';
+                    tick.classList.add('read');
+                });
+            }
+        });
+
+        socket.on('reactionUpdated', ({ msgId, reactions }) => {
+            const bubbleEl = document.getElementById(`msg-${msgId}`);
+            if (bubbleEl) {
+                const reactionBox = bubbleEl.querySelector('.reactions-display');
+                const parsed = JSON.parse(reactions || '{}');
+                const uniqueEmojis = [...new Set(Object.values(parsed))].join(' ');
+                
+                if (reactionBox) reactionBox.textContent = uniqueEmojis;
+            }
+        });
+
+        function appendBubble(data) {
+            const isOutgoing = data.sender === currentUser;
+            const bubble = document.createElement('div');
+            bubble.classList.add('bubble', isOutgoing ? 'outgoing' : 'incoming');
+            bubble.id = `msg-${data.id}`;
+
+            let bodyContent = `
+                <div class="reaction-bar">
+                    <span class="reaction-btn" onclick="reactToMessage(${data.id}, '❤️')">❤️</span>
+                    <span class="reaction-btn" onclick="reactToMessage(${data.id}, '😂')">😂</span>
+                    <span class="reaction-btn" onclick="reactToMessage(${data.id}, '👍')">👍</span>
+                    <span class="reaction-btn" onclick="reactToMessage(${data.id}, '😮')">😮</span>
+                    <span class="reaction-btn" onclick="reactToMessage(${data.id}, '🔥')">🔥</span>
+                </div>
+            `;
+
+            if (isGroupChat && !isOutgoing) {
+                bodyContent += `<div class="sender-tag">${data.sender}</div>`;
+            } else if (!isGroupChat) {
+                bodyContent += `<div class="enc-badge">🔒 Encrypted</div>`;
+            }
+
+            if (data.decryptedMessage) {
+                bodyContent += `<div>${data.decryptedMessage}</div>`;
+            }
+
+            if (data.fileData) {
+                const type = data.fileType || '';
+                if (type === 'sticker') {
+                    bodyContent += `<div style="font-size: 4rem; text-align: center;">${data.fileData}</div>`;
+                } else if (type.startsWith('image/')) {
+                    bodyContent += `<img src="${data.fileData}" class="chat-img" />`;
+                } else if (type.startsWith('video/')) {
+                    bodyContent += `<video src="${data.fileData}" controls class="chat-video"></video>`;
+                } else if (type.startsWith('audio/')) {
+                    bodyContent += `<audio src="${data.fileData}" controls class="chat-audio"></audio>`;
+                } else {
+                    bodyContent += `<a href="${data.fileData}" download="${data.fileName || 'download'}" class="file-link">💾 Download ${data.fileName || 'File'}</a>`;
+                }
+            }
+
+            let tickStr = '';
+            let tickClass = 'tick-icon';
+
+            if (isOutgoing && !isGroupChat) {
+                if (data.status === 'read') {
+                    tickStr = '✓✓';
+                    tickClass = 'tick-icon read';
+                } else if (data.status === 'delivered') {
+                    tickStr = '✓✓';
+                } else {
+                    tickStr = '✓';
+                }
+            }
+
+            const parsedReactions = JSON.parse(data.reactions || '{}');
+            const emojisStr = [...new Set(Object.values(parsedReactions))].join(' ');
+
+            bodyContent += `
+                <div class="reactions-display">${emojisStr}</div>
+                <div class="bubble-footer">
+                    <span class="bubble-time">${data.time || ''}</span>
+                    ${isOutgoing && !isGroupChat ? `<span class="${tickClass}">${tickStr}</span>` : ''}
+                </div>
+            `;
+
+            bubble.innerHTML = bodyContent;
+            chatBody.appendChild(bubble);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        window.reactToMessage = function(msgId, emoji) {
+            socket.emit('addReaction', { msgId, emoji, target: activeTarget, isGroup: isGroupChat });
+        };
+
+        function launchCall(startWithAudioOnly) {
+            if (!activeTarget) return;
+
+            const callRoomName = isGroupChat 
+                ? `chatz-group-${activeTarget.toLowerCase().replace(/[^a-z0-9]/g, '')}`
+                : `chatz-dm-${[currentUser, activeTarget].sort().join('-')}`;
+
+            socket.emit('startCallNotification', {
+                target: activeTarget,
+                isGroup: isGroupChat,
+                callRoomName,
+                isAudioOnly: startWithAudioOnly
+            });
+
+            joinJitsiRoom(callRoomName, startWithAudioOnly);
+        }
+
+        function joinJitsiRoom(callRoomName, startWithAudioOnly) {
+            callOverlay.classList.remove('hidden');
+            incomingCallBox.classList.add('hidden');
+            jitsiContainer.innerHTML = '';
+
+            const domain = 'meet.jit.si';
+            const options = {
+                roomName: callRoomName,
+                width: '100%',
+                height: '100%',
+                parentNode: jitsiContainer,
+                userInfo: { displayName: currentUser },
+                configOverwrite: {
+                    startAudioOnly: startWithAudioOnly,
+                    disableDeepLinking: true,
+                    prejoinPageEnabled: false,
+                    enableWelcomePage: false,
+                    startWithAudioMuted: false,
+                    startWithVideoMuted: startWithAudioOnly,
+                    resolution: 360,
+                    p2p: { enabled: true }
+                },
+                interfaceConfigOverwrite: {
+                    TOOLBAR_BUTTONS: ['microphone', 'camera', 'desktop', 'hangup', 'tileview'],
+                    SHOW_JITSI_WATERMARK: false
+                }
+            };
+
+            jitsiApi = new JitsiMeetExternalAPI(domain, options);
+
+            const iframe = jitsiApi.getIFrame();
+            if (iframe) {
+                iframe.setAttribute('allow', 'camera; microphone; display-capture; autoplay; clipboard-write');
+            }
+
+            jitsiApi.addEventListeners({
+                videoConferenceLeft: closeCallUI
+            });
+        }
+
+        socket.on('incomingCall', (data) => {
+            currentIncomingCall = data;
+            const type = data.isAudioOnly ? 'Audio' : 'Video';
+            const fromText = data.isGroup ? `in #${data.groupName} from ${data.from}` : `from ${data.from}`;
+
+            incomingCallText.textContent = `Incoming ${type} Call ${fromText}`;
+            incomingCallBox.classList.remove('hidden');
+        });
+
+        acceptIncomingCallBtn.onclick = () => {
+            if (currentIncomingCall) {
+                joinJitsiRoom(currentIncomingCall.callRoomName, currentIncomingCall.isAudioOnly);
+            }
+        };
+
+        declineIncomingCallBtn.onclick = () => {
+            if (currentIncomingCall && !currentIncomingCall.isGroup) {
+                socket.emit('declineCall', { to: currentIncomingCall.from });
+            }
+            incomingCallBox.classList.add('hidden');
+            currentIncomingCall = null;
+        };
+
+        socket.on('callDeclined', ({ from }) => {
+            alert(`${from} declined the call.`);
+            closeCallUI();
+        });
+
+        endCallBtn.onclick = closeCallUI;
+
+        function closeCallUI() {
+            if (jitsiApi) {
+                jitsiApi.dispose();
+                jitsiApi = null;
+            }
+            callOverlay.classList.add('hidden');
+            incomingCallBox.classList.add('hidden');
+            jitsiContainer.innerHTML = '';
+        }
+
+        audioCallBtn.onclick = () => launchCall(true);
+        videoCallBtn.onclick = () => launchCall(false);
+    </script>
+</body>
+</html>
