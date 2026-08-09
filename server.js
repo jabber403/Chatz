@@ -14,6 +14,7 @@ db.run('PRAGMA journal_mode = WAL;');
 
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT, pfp TEXT)`);
+    db.run(`CREATE TABLE IF NOT EXISTS blocks (blocker TEXT, blocked TEXT, PRIMARY KEY (blocker, blocked))`);
     db.run(`CREATE TABLE IF NOT EXISTS messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT, 
         sender TEXT, 
@@ -33,7 +34,7 @@ app.use(express.static(__dirname));
 
 app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'));
 
-const connectedUsers = {};
+const onlineUsers = new Set();
 
 function broadcastUserList() {
     db.all('SELECT username, pfp FROM users', [], (err, rows) => {
@@ -41,9 +42,15 @@ function broadcastUserList() {
         const userList = rows.map(u => ({
             username: u.username,
             pfp: u.pfp || '👤',
-            online: !!connectedUsers[u.username]
+            online: onlineUsers.has(u.username)
         }));
         io.emit('updateUserList', userList);
+    });
+}
+
+function isBlocked(blocker, blocked, callback) {
+    db.get('SELECT 1 FROM blocks WHERE blocker = ? AND blocked = ?', [blocker, blocked], (err, row) => {
+        callback(!!row);
     });
 }
 
@@ -60,7 +67,6 @@ io.on('connection', (socket) => {
 
             if (row) {
                 if (row.password === password) {
-                    // Retain existing saved PFP if user didn't upload a new custom one
                     const updatedPfp = (pfp && pfp !== '👤') ? pfp : (row.pfp || '👤');
                     db.run('UPDATE users SET pfp = ? WHERE username = ?', [updatedPfp, username]);
                     completeLogin(updatedPfp);
@@ -79,11 +85,38 @@ io.on('connection', (socket) => {
         function completeLogin(finalPfp) {
             socket.username = username;
             socket.pfp = finalPfp;
-            connectedUsers[username] = socket.id;
+            
+            // Join user-specific socket room to enable multi-device sync across PC and Phone
+            socket.join(`user:${username}`);
+            onlineUsers.add(username);
 
             socket.emit('loginResponse', { success: true, user: { username, pfp: finalPfp } });
             broadcastUserList();
+            sendBlockList(username);
         }
+    });
+
+    function sendBlockList(username) {
+        db.all('SELECT blocked FROM blocks WHERE blocker = ?', [username], (err, rows) => {
+            if (!err) {
+                const list = rows.map(r => r.blocked);
+                io.to(`user:${username}`).emit('blockListUpdated', list);
+            }
+        });
+    }
+
+    socket.on('blockUser', (target) => {
+        if (!socket.username || !target) return;
+        db.run('INSERT OR IGNORE INTO blocks (blocker, blocked) VALUES (?, ?)', [socket.username, target], () => {
+            sendBlockList(socket.username);
+        });
+    });
+
+    socket.on('unblockUser', (target) => {
+        if (!socket.username || !target) return;
+        db.run('DELETE FROM blocks WHERE blocker = ? AND blocked = ?', [socket.username, target], () => {
+            sendBlockList(socket.username);
+        });
     });
 
     socket.on('joinGroup', (roomName) => {
@@ -104,9 +137,7 @@ io.on('connection', (socket) => {
             params = [socket.username, target, target, socket.username];
 
             db.run(`UPDATE messages SET status = 'read' WHERE sender = ? AND recipient = ? AND status != 'read'`, [target, socket.username], () => {
-                if (connectedUsers[target]) {
-                    io.to(connectedUsers[target]).emit('messagesMarkedRead', { by: socket.username });
-                }
+                io.to(`user:${target}`).emit('messagesMarkedRead', { by: socket.username });
             });
         }
 
@@ -122,38 +153,63 @@ io.on('connection', (socket) => {
 
         const now = new Date();
         const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-        
-        let initialStatus = 'sent';
-        if (data.recipient && connectedUsers[data.recipient]) {
-            initialStatus = 'delivered';
+
+        if (data.recipient) {
+            isBlocked(data.recipient, socket.username, (blocked) => {
+                if (blocked) return; // Silent drop if blocked by recipient
+                processMessageInsert();
+            });
+        } else {
+            processMessageInsert();
         }
 
-        const stmt = db.prepare('INSERT INTO messages (sender, recipient, room, message, fileData, fileName, fileType, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-        stmt.run(socket.username, data.recipient || null, data.room || null, data.message || '', data.fileData || '', data.fileName || '', data.fileType || '', initialStatus, function(err) {
-            if (err) return;
+        function processMessageInsert() {
+            let initialStatus = 'sent';
+            if (data.recipient && onlineUsers.has(data.recipient)) {
+                initialStatus = 'delivered';
+            }
 
-            const insertedId = this.lastID;
-            const payload = {
-                id: insertedId,
-                sender: socket.username,
-                recipient: data.recipient || null,
-                room: data.room || null,
-                message: data.message || '',
-                fileData: data.fileData || '',
-                fileName: data.fileName || '',
-                fileType: data.fileType || '',
-                status: initialStatus,
-                reactions: '{}',
-                time: timeStr
-            };
+            const stmt = db.prepare('INSERT INTO messages (sender, recipient, room, message, fileData, fileName, fileType, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+            stmt.run(socket.username, data.recipient || null, data.room || null, data.message || '', data.fileData || '', data.fileName || '', data.fileType || '', initialStatus, function(err) {
+                if (err) return;
 
-            if (data.room) {
-                io.to(data.room).emit('receiveMessage', payload);
-            } else if (data.recipient) {
-                if (connectedUsers[data.recipient]) {
-                    io.to(connectedUsers[data.recipient]).emit('receiveMessage', payload);
+                const insertedId = this.lastID;
+                const payload = {
+                    id: insertedId,
+                    sender: socket.username,
+                    recipient: data.recipient || null,
+                    room: data.room || null,
+                    message: data.message || '',
+                    fileData: data.fileData || '',
+                    fileName: data.fileName || '',
+                    fileType: data.fileType || '',
+                    status: initialStatus,
+                    reactions: '{}',
+                    time: timeStr
+                };
+
+                if (data.room) {
+                    io.to(data.room).emit('receiveMessage', payload);
+                } else if (data.recipient) {
+                    // Sync to ALL devices of sender and recipient
+                    io.to(`user:${data.recipient}`).emit('receiveMessage', payload);
+                    io.to(`user:${socket.username}`).emit('receiveMessage', payload);
                 }
-                socket.emit('receiveMessage', payload);
+            });
+        }
+    });
+
+    socket.on('deleteMessage', ({ msgId, target, isGroup }) => {
+        if (!socket.username) return;
+        db.run('DELETE FROM messages WHERE id = ? AND sender = ?', [msgId, socket.username], function(err) {
+            if (!err && this.changes > 0) {
+                const payload = { msgId, target, isGroup };
+                if (isGroup) {
+                    io.to(target).emit('messageDeleted', payload);
+                } else {
+                    io.to(`user:${target}`).emit('messageDeleted', payload);
+                    io.to(`user:${socket.username}`).emit('messageDeleted', payload);
+                }
             }
         });
     });
@@ -170,8 +226,8 @@ io.on('connection', (socket) => {
                     if (isGroup) {
                         io.to(target).emit('reactionUpdated', updatePayload);
                     } else {
-                        if (connectedUsers[target]) io.to(connectedUsers[target]).emit('reactionUpdated', updatePayload);
-                        socket.emit('reactionUpdated', updatePayload);
+                        io.to(`user:${target}`).emit('reactionUpdated', updatePayload);
+                        io.to(`user:${socket.username}`).emit('reactionUpdated', updatePayload);
                     }
                 });
             }
@@ -181,16 +237,14 @@ io.on('connection', (socket) => {
     socket.on('typing', ({ target, isGroup, isTyping }) => {
         if (isGroup) {
             socket.to(target).emit('userTyping', { from: socket.username, room: target, isTyping });
-        } else if (connectedUsers[target]) {
-            io.to(connectedUsers[target]).emit('userTyping', { from: socket.username, isTyping });
+        } else {
+            io.to(`user:${target}`).emit('userTyping', { from: socket.username, isTyping });
         }
     });
 
     socket.on('markAsRead', ({ sender }) => {
         db.run(`UPDATE messages SET status = 'read' WHERE sender = ? AND recipient = ? AND status != 'read'`, [sender, socket.username], () => {
-            if (connectedUsers[sender]) {
-                io.to(connectedUsers[sender]).emit('messagesMarkedRead', { by: socket.username });
-            }
+            io.to(`user:${sender}`).emit('messagesMarkedRead', { by: socket.username });
         });
     });
 
@@ -204,27 +258,30 @@ io.on('connection', (socket) => {
                 groupName: target
             });
         } else {
-            if (connectedUsers[target]) {
-                io.to(connectedUsers[target]).emit('incomingCall', {
-                    from: socket.username,
-                    callRoomName,
-                    isAudioOnly,
-                    isGroup: false
-                });
-            }
+            isBlocked(target, socket.username, (blocked) => {
+                if (!blocked) {
+                    io.to(`user:${target}`).emit('incomingCall', {
+                        from: socket.username,
+                        callRoomName,
+                        isAudioOnly,
+                        isGroup: false
+                    });
+                }
+            });
         }
     });
 
     socket.on('declineCall', ({ to }) => {
-        if (connectedUsers[to]) {
-            io.to(connectedUsers[to]).emit('callDeclined', { from: socket.username });
-        }
+        io.to(`user:${to}`).emit('callDeclined', { from: socket.username });
     });
 
     socket.on('disconnect', () => {
         if (socket.username) {
-            delete connectedUsers[socket.username];
-            broadcastUserList();
+            const userRoom = io.sockets.adapter.rooms.get(`user:${socket.username}`);
+            if (!userRoom || userRoom.size === 0) {
+                onlineUsers.delete(socket.username);
+                broadcastUserList();
+            }
         }
     });
 });
