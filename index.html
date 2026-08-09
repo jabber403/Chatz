@@ -70,7 +70,6 @@
         .chat-audio { width: 220px; margin-top: 4px; }
         .file-link { color: #53bdeb; text-decoration: none; font-weight: bold; margin-top: 4px; display: inline-block; }
 
-        /* REACTION & CONTROL OVERLAY */
         .bubble-menu { display: none; position: absolute; top: -35px; right: 0; background: #202c33; border: 1px solid #00a884; border-radius: 20px; padding: 2px 8px; gap: 6px; z-index: 50; align-items: center; }
         .bubble:hover .bubble-menu { display: flex; }
         .reaction-btn { cursor: pointer; font-size: 1rem; transition: transform 0.1s; }
@@ -81,7 +80,6 @@
         .chat-footer { background-color: #202c33; padding: 10px 16px; display: flex; align-items: center; gap: 10px; position: relative; }
         .chat-footer input[type="text"] { flex: 1; background-color: #2a3942; }
 
-        /* GIF & STICKER PICKER POPUP */
         #mediaPickerDrawer {
             position: absolute; bottom: 65px; left: 16px; width: 300px; height: 280px;
             background-color: #202c33; border: 1px solid #2a3942; border-radius: 12px;
@@ -95,12 +93,10 @@
         .sticker-item:hover { transform: scale(1.2); }
         .gif-item { width: 100%; height: 70px; object-fit: cover; border-radius: 6px; cursor: pointer; }
 
-        /* RECORDING VOICE NOTE UI */
         .record-btn { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: #00a884; }
         .record-btn.recording { color: #ea4335; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
-        /* BLOCKED USERS DRAWER */
         #blockedDrawer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: #111b21; z-index: 200; padding: 20px; display: flex; flex-direction: column; gap: 12px;
@@ -125,7 +121,6 @@
         #jitsiContainer { width: 100%; height: 88%; }
         .call-controls { height: 12%; display: flex; align-items: center; justify-content: center; gap: 16px; }
 
-        /* MOBILE RESPONSIVE ADAPTATION */
         @media (max-width: 768px) {
             .sidebar { width: 100%; }
             .chat-area { width: 100%; }
@@ -335,6 +330,40 @@
             'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDdxMnRzNHU3eDRjYmVqcncybmhyMXpncHRvNmRrcXR3OTI5c3V2OCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKsjRrfIPjeiVyM/giphy.gif',
             'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExc2J1bjNsc3B6bWFndXByenR1am96aGVidDRiZHFlZXRkMmdyM2tzMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l41K3o5TKSFi88C5O/giphy.gif'
         ];
+
+        /* --- LOCAL STORAGE SYNC ENGINE --- */
+        function getLocalStorageKey() {
+            return `chatz_local_store_${currentUser}`;
+        }
+
+        function getStoredChatData() {
+            if (!currentUser) return {};
+            try {
+                return JSON.parse(localStorage.getItem(getLocalStorageKey()) || '{}');
+            } catch(e) { return {}; }
+        }
+
+        function saveLocalMessage(targetKey, msgObj) {
+            if (!currentUser || !targetKey) return;
+            const data = getStoredChatData();
+            if (!data[targetKey]) data[targetKey] = [];
+            
+            // Prevent duplicate message entries by ID
+            const exists = data[targetKey].some(m => m.id === msgObj.id);
+            if (!exists) {
+                data[targetKey].push(msgObj);
+                localStorage.setItem(getLocalStorageKey(), JSON.stringify(data));
+            }
+        }
+
+        function deleteLocalMessage(targetKey, msgId) {
+            if (!currentUser || !targetKey) return;
+            const data = getStoredChatData();
+            if (data[targetKey]) {
+                data[targetKey] = data[targetKey].filter(m => m.id !== msgId);
+                localStorage.setItem(getLocalStorageKey(), JSON.stringify(data));
+            }
+        }
 
         pfpFileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -645,6 +674,15 @@
             updateBlockButtonState();
             renderGroupsList(searchInput.value.trim().toLowerCase());
             renderContactsList(searchInput.value.trim().toLowerCase());
+
+            // 1. Load locally cached messages first (instant offline access)
+            const targetKey = isGroupChat ? `group:${target}` : target;
+            const localStore = getStoredChatData();
+            if (localStore[targetKey] && localStore[targetKey].length > 0) {
+                localStore[targetKey].forEach(item => appendBubble(item));
+            }
+
+            // 2. Fetch fresh server database history to sync missing messages
             socket.emit('loadConversation', { target, isGroup: isGroupChat });
         }
 
@@ -720,28 +758,33 @@
             if (data.target === activeTarget) {
                 chatBody.innerHTML = '';
                 const secret = !isGroupChat ? getSharedSecret(currentUser, activeTarget) : null;
+                const targetKey = isGroupChat ? `group:${data.target}` : data.target;
 
                 data.history.forEach(item => {
                     item.decryptedMessage = (!isGroupChat && item.message) ? decrypt(item.message, secret) : item.message;
+                    saveLocalMessage(targetKey, item);
                     appendBubble(item);
                 });
             }
         });
 
         socket.on('receiveMessage', (data) => {
+            const secret = (!data.room && data.sender) ? getSharedSecret(currentUser, data.sender === currentUser ? data.recipient : data.sender) : null;
+            data.decryptedMessage = (!data.room && data.message) ? decrypt(data.message, secret) : data.message;
+
+            const targetKey = data.room ? `group:${data.room}` : (data.sender === currentUser ? data.recipient : data.sender);
+            saveLocalMessage(targetKey, data);
+
             const matchesDirect = !isGroupChat && ((data.sender === currentUser && data.recipient === activeTarget) || (data.sender === activeTarget && data.recipient === currentUser));
             const matchesGroup = isGroupChat && data.room === activeTarget;
 
             if (matchesDirect || matchesGroup) {
-                const secret = !isGroupChat ? getSharedSecret(currentUser, activeTarget) : null;
-                data.decryptedMessage = (!isGroupChat && data.message) ? decrypt(data.message, secret) : data.message;
                 appendBubble(data);
 
                 if (!isGroupChat && data.sender === activeTarget) {
                     socket.emit('markAsRead', { sender: activeTarget });
                 }
             } else {
-                // Increment unread count for non-active chats
                 if (data.room) {
                     unreadCounts[`group:${data.room}`] = (unreadCounts[`group:${data.room}`] || 0) + 1;
                     renderGroupsList(searchInput.value.trim().toLowerCase());
@@ -752,7 +795,10 @@
             }
         });
 
-        socket.on('messageDeleted', ({ msgId }) => {
+        socket.on('messageDeleted', ({ msgId, target, isGroup }) => {
+            const targetKey = isGroup ? `group:${target}` : target;
+            deleteLocalMessage(targetKey, msgId);
+
             const bubbleEl = document.getElementById(`msg-${msgId}`);
             if (bubbleEl) bubbleEl.remove();
         });
@@ -778,6 +824,8 @@
         });
 
         function appendBubble(data) {
+            if (document.getElementById(`msg-${data.id}`)) return; // Prevent duplicates
+
             const isOutgoing = data.sender === currentUser;
             const bubble = document.createElement('div');
             bubble.classList.add('bubble', isOutgoing ? 'outgoing' : 'incoming');

@@ -31,7 +31,6 @@ db.serialize(() => {
 });
 
 app.use(express.static(__dirname));
-
 app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'));
 
 const onlineUsers = new Set();
@@ -86,7 +85,7 @@ io.on('connection', (socket) => {
             socket.username = username;
             socket.pfp = finalPfp;
             
-            // Join user-specific socket room to enable multi-device sync across PC and Phone
+            // Join multi-device personal account room
             socket.join(`user:${username}`);
             onlineUsers.add(username);
 
@@ -156,7 +155,7 @@ io.on('connection', (socket) => {
 
         if (data.recipient) {
             isBlocked(data.recipient, socket.username, (blocked) => {
-                if (blocked) return; // Silent drop if blocked by recipient
+                if (blocked) return;
                 processMessageInsert();
             });
         } else {
@@ -191,7 +190,7 @@ io.on('connection', (socket) => {
                 if (data.room) {
                     io.to(data.room).emit('receiveMessage', payload);
                 } else if (data.recipient) {
-                    // Sync to ALL devices of sender and recipient
+                    // Sync message immediately to ALL devices of sender and recipient
                     io.to(`user:${data.recipient}`).emit('receiveMessage', payload);
                     io.to(`user:${socket.username}`).emit('receiveMessage', payload);
                 }
@@ -287,4 +286,4 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => console.log(`WhatsApp Chatz running on http://localhost:${PORT}`));
+http.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
