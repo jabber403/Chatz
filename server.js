@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http, {
-    maxHttpBufferSize: 1e8, // 100MB max payload for files/voice notes
+    maxHttpBufferSize: 1e8, // 100MB max payload for files and media
     cors: { 
         origin: "*", 
         methods: ["GET", "POST"] 
@@ -12,8 +12,9 @@ const io = require('socket.io')(http, {
 });
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const crypto = require('crypto');
 
-// Initialize SQLite Database with Write-Ahead Logging (WAL) for concurrency
+// Initialize SQLite Database with Write-Ahead Logging (WAL) for optimal concurrency
 const db = new sqlite3.Database('./chat.db', (err) => {
     if (err) {
         console.error('Failed to connect to SQLite database:', err.message);
@@ -26,11 +27,12 @@ db.run('PRAGMA journal_mode = WAL;');
 
 // Database Schema Initialization
 db.serialize(() => {
-    // Users table with profile picture support
+    // Users table with session token support for persistent auto-login
     db.run(`CREATE TABLE IF NOT EXISTS users (
         username TEXT PRIMARY KEY, 
         password TEXT NOT NULL, 
         pfp TEXT DEFAULT '👤',
+        session_token TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
@@ -56,6 +58,14 @@ db.serialize(() => {
         joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (room, username)
     )`);
+
+    // User blocking relationship table
+    db.run(`CREATE TABLE IF NOT EXISTS blocked_users (
+        blocker TEXT NOT NULL,
+        blocked TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (blocker, blocked)
+    )`);
 });
 
 // Middleware & Static File Serving
@@ -70,17 +80,69 @@ app.get('/', (req, res) => {
 const onlineUsers = new Map(); // Username -> Set of socket IDs (multi-device support)
 
 /**
- * Broadcasts full user directory with online/offline indicators to all connected clients
+ * Helper function to generate secure unique session tokens
+ */
+function generateToken() {
+    return crypto.randomBytes(32).toString('hex');
+}
+
+/**
+ * Checks whether userA has blocked userB or vice-versa
+ */
+function isBlockedRelationship(userA, userB, callback) {
+    if (!userA || !userB) return callback(false);
+    const query = `
+        SELECT 1 FROM blocked_users 
+        WHERE (blocker = ? AND blocked = ?) OR (blocker = ? AND blocked = ?)
+        LIMIT 1
+    `;
+    db.get(query, [userA, userB, userB, userA], (err, row) => {
+        callback(!!row);
+    });
+}
+
+/**
+ * Retrieves the full list of users blocked by a specific username
+ */
+function getBlockedList(username, callback) {
+    db.all('SELECT blocked FROM blocked_users WHERE blocker = ?', [username], (err, rows) => {
+        if (err || !rows) return callback([]);
+        callback(rows.map(r => r.blocked));
+    });
+}
+
+/**
+ * Broadcasts full user directory with online/offline indicators to connected clients
  */
 function broadcastUserDirectory() {
     db.all('SELECT username, pfp FROM users', [], (err, rows) => {
         if (err || !rows) return;
-        const userList = rows.map(u => ({
-            username: u.username,
-            pfp: u.pfp || '👤',
-            online: onlineUsers.has(u.username) && onlineUsers.get(u.username).size > 0
-        }));
-        io.emit('updateUserList', userList);
+
+        // Iterate through connected sockets to send personalized lists (taking blocking into account)
+        io.sockets.sockets.forEach((targetSocket) => {
+            if (!targetSocket.username) return;
+
+            getBlockedList(targetSocket.username, (blockedByMe) => {
+                db.all('SELECT blocker FROM blocked_users WHERE blocked = ?', [targetSocket.username], (err2, blockedMeRows) => {
+                    const blockedMe = blockedMeRows ? blockedMeRows.map(r => r.blocker) : [];
+
+                    const userList = rows.map(u => {
+                        const isBlockedBySelf = blockedByMe.includes(u.username);
+                        const hasBlockedSelf = blockedMe.includes(u.username);
+                        const isOnline = onlineUsers.has(u.username) && onlineUsers.get(u.username).size > 0;
+
+                        return {
+                            username: u.username,
+                            pfp: u.pfp || '👤',
+                            online: hasBlockedSelf ? false : isOnline, // Hide online status if they blocked us
+                            isBlocked: isBlockedBySelf
+                        };
+                    });
+
+                    targetSocket.emit('updateUserList', userList);
+                });
+            });
+        });
     });
 }
 
@@ -107,7 +169,21 @@ function fetchUnreadCounts(username, callback) {
 io.on('connection', (socket) => {
     console.log(`[Socket Connected]: ${socket.id}`);
 
-    // --- USER AUTHENTICATION & LOGIN ---
+    // --- AUTOMATIC SESSION LOGIN (TOKEN BASED) ---
+    socket.on('autoLogin', ({ sessionToken }) => {
+        if (!sessionToken) {
+            return socket.emit('autoLoginResponse', { success: false });
+        }
+
+        db.get('SELECT username, pfp FROM users WHERE session_token = ?', [sessionToken], (err, row) => {
+            if (err || !row) {
+                return socket.emit('autoLoginResponse', { success: false });
+            }
+            completeUserSession(row.username, row.pfp || '👤', sessionToken, true);
+        });
+    });
+
+    // --- STANDARD USER AUTHENTICATION & LOGIN ---
     socket.on('login', (data) => {
         const { username, password, pfp } = data;
 
@@ -125,12 +201,14 @@ io.on('connection', (socket) => {
                 return socket.emit('loginResponse', { success: false, msg: 'Database query error.' });
             }
 
+            const newToken = generateToken();
+
             if (row) {
                 // Existing User Authentication
                 if (row.password === password) {
                     const finalPfp = (pfp && pfp !== '👤') ? pfp : (row.pfp || '👤');
-                    db.run('UPDATE users SET pfp = ? WHERE username = ?', [finalPfp, trimmedUser], () => {
-                        completeUserSession(trimmedUser, finalPfp);
+                    db.run('UPDATE users SET pfp = ?, session_token = ? WHERE username = ?', [finalPfp, newToken, trimmedUser], () => {
+                        completeUserSession(trimmedUser, finalPfp, newToken, false);
                     });
                 } else {
                     socket.emit('loginResponse', { success: false, msg: 'Invalid password!' });
@@ -138,45 +216,77 @@ io.on('connection', (socket) => {
             } else {
                 // New User Registration
                 const initialPfp = pfp || '👤';
-                db.run('INSERT INTO users (username, password, pfp) VALUES (?, ?, ?)', [trimmedUser, password, initialPfp], (err) => {
+                db.run('INSERT INTO users (username, password, pfp, session_token) VALUES (?, ?, ?, ?)', [trimmedUser, password, initialPfp, newToken], (err) => {
                     if (err) {
                         return socket.emit('loginResponse', { success: false, msg: 'Could not create account.' });
                     }
-                    completeUserSession(trimmedUser, initialPfp);
+                    completeUserSession(trimmedUser, initialPfp, newToken, false);
                 });
             }
         });
+    });
 
-        function completeUserSession(user, userPfp) {
-            socket.username = user;
-            socket.pfp = userPfp;
+    function completeUserSession(user, userPfp, token, isAuto) {
+        socket.username = user;
+        socket.pfp = userPfp;
 
-            // Register socket in online users map
-            if (!onlineUsers.has(user)) {
-                onlineUsers.set(user, new Set());
-            }
-            onlineUsers.get(user).add(socket.id);
-            socket.join(`user:${user}`);
+        // Register socket in online users map
+        if (!onlineUsers.has(user)) {
+            onlineUsers.set(user, new Set());
+        }
+        onlineUsers.get(user).add(socket.id);
+        socket.join(`user:${user}`);
 
-            // Automatically rejoin all saved groups
-            db.all('SELECT room FROM group_members WHERE username = ?', [user], (err, rows) => {
-                const groups = rows ? rows.map(r => r.room) : [];
-                groups.forEach(g => socket.join(g));
+        // Automatically rejoin all saved groups
+        db.all('SELECT room FROM group_members WHERE username = ?', [user], (err, rows) => {
+            const groups = rows ? rows.map(r => r.room) : [];
+            groups.forEach(g => socket.join(g));
 
-                // Mark any offline messages pending for this user as 'delivered'
-                db.run(`UPDATE messages SET status = 'delivered' WHERE recipient = ? AND status = 'sent'`, [user], () => {
-                    fetchUnreadCounts(user, (unreadMap) => {
-                        socket.emit('loginResponse', {
+            // Mark offline messages pending for this user as 'delivered'
+            db.run(`UPDATE messages SET status = 'delivered' WHERE recipient = ? AND status = 'sent'`, [user], () => {
+                fetchUnreadCounts(user, (unreadMap) => {
+                    getBlockedList(user, (blockedList) => {
+                        const responsePayload = {
                             success: true,
-                            user: { username: user, pfp: userPfp },
+                            user: { username: user, pfp: userPfp, sessionToken: token },
                             groups,
-                            unreadMap
-                        });
+                            unreadMap,
+                            blockedList
+                        };
+
+                        if (isAuto) {
+                            socket.emit('autoLoginResponse', responsePayload);
+                        } else {
+                            socket.emit('loginResponse', responsePayload);
+                        }
                         broadcastUserDirectory();
                     });
                 });
             });
-        }
+        });
+    }
+
+    // --- USER BLOCKING & UNBLOCKING ---
+    socket.on('blockUser', (targetUser) => {
+        if (!socket.username || !targetUser || socket.username === targetUser) return;
+
+        db.run('INSERT OR IGNORE INTO blocked_users (blocker, blocked) VALUES (?, ?)', [socket.username, targetUser], () => {
+            getBlockedList(socket.username, (blockedList) => {
+                socket.emit('blockedListUpdated', blockedList);
+                broadcastUserDirectory();
+            });
+        });
+    });
+
+    socket.on('unblockUser', (targetUser) => {
+        if (!socket.username || !targetUser) return;
+
+        db.run('DELETE FROM blocked_users WHERE blocker = ? AND blocked = ?', [socket.username, targetUser], () => {
+            getBlockedList(socket.username, (blockedList) => {
+                socket.emit('blockedListUpdated', blockedList);
+                broadcastUserDirectory();
+            });
+        });
     });
 
     // --- GROUP CHAT MANAGEMENT ---
@@ -207,20 +317,21 @@ io.on('connection', (socket) => {
                 }
             });
         } else {
-            const query = `
-                SELECT id, sender, recipient, room, message, fileData, fileName, fileType, status, reactions, strftime('%H:%M', timestamp, 'localtime') as time 
-                FROM messages 
-                WHERE (sender = ? AND recipient = ?) OR (sender = ? AND recipient = ?) 
-                ORDER BY id ASC
-            `;
-            db.all(query, [socket.username, target, target, socket.username], (err, rows) => {
-                if (err) return;
+            // Check blocking status before displaying conversation history
+            isBlockedRelationship(socket.username, target, (blocked) => {
+                const query = `
+                    SELECT id, sender, recipient, room, message, fileData, fileName, fileType, status, reactions, strftime('%H:%M', timestamp, 'localtime') as time 
+                    FROM messages 
+                    WHERE (sender = ? AND recipient = ?) OR (sender = ? AND recipient = ?) 
+                    ORDER BY id ASC
+                `;
+                db.all(query, [socket.username, target, target, socket.username], (err, rows) => {
+                    if (err) return;
 
-                // Update unread status to 'read' when opening conversation
-                db.run(`UPDATE messages SET status = 'read' WHERE sender = ? AND recipient = ? AND status != 'read'`, [target, socket.username], () => {
-                    // Inform the sender their messages were read
-                    io.to(`user:${target}`).emit('messagesMarkedRead', { by: socket.username });
-                    socket.emit('conversationHistory', { target, isGroup: false, history: rows || [] });
+                    db.run(`UPDATE messages SET status = 'read' WHERE sender = ? AND recipient = ? AND status != 'read'`, [target, socket.username], () => {
+                        io.to(`user:${target}`).emit('messagesMarkedRead', { by: socket.username });
+                        socket.emit('conversationHistory', { target, isGroup: false, history: rows || [], isBlocked: blocked });
+                    });
                 });
             });
         }
@@ -230,64 +341,71 @@ io.on('connection', (socket) => {
     socket.on('sendMessage', (data) => {
         if (!socket.username) return;
 
-        const now = new Date();
-        const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-
         const recipient = data.recipient || null;
         const room = data.room || null;
-        const isRecipientOnline = recipient && onlineUsers.has(recipient) && onlineUsers.get(recipient).size > 0;
 
-        let initialStatus = 'sent';
-        if (isRecipientOnline) {
-            initialStatus = 'delivered';
+        // If direct message, check if either party blocked the other
+        if (recipient) {
+            isBlockedRelationship(socket.username, recipient, (blocked) => {
+                if (blocked) {
+                    return socket.emit('systemNotification', { text: 'Message not sent. Blocking interaction in effect.' });
+                }
+                processMessagePersistence();
+            });
+        } else {
+            processMessagePersistence();
         }
 
-        const query = `
-            INSERT INTO messages (sender, recipient, room, message, fileData, fileName, fileType, status) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `;
+        function processMessagePersistence() {
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
 
-        db.run(query, [
-            socket.username, 
-            recipient, 
-            room, 
-            data.message || '', 
-            data.fileData || '', 
-            data.fileName || '', 
-            data.fileType || '', 
-            initialStatus
-        ], function(err) {
-            if (err) {
-                console.error('Error saving message:', err.message);
-                return;
-            }
+            const isRecipientOnline = recipient && onlineUsers.has(recipient) && onlineUsers.get(recipient).size > 0;
+            let initialStatus = isRecipientOnline ? 'delivered' : 'sent';
 
-            const insertedId = this.lastID;
-            const messagePayload = {
-                id: insertedId,
-                sender: socket.username,
-                recipient,
-                room,
-                message: data.message || '',
-                fileData: data.fileData || '',
-                fileName: data.fileName || '',
-                fileType: data.fileType || '',
-                status: initialStatus,
-                reactions: '{}',
-                time: timeStr
-            };
+            const query = `
+                INSERT INTO messages (sender, recipient, room, message, fileData, fileName, fileType, status) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `;
 
-            if (room) {
-                // Broadcast to Group Room
-                io.to(room).emit('receiveMessage', messagePayload);
-            } else if (recipient) {
-                // Send to recipient's active user socket room if online
-                io.to(`user:${recipient}`).emit('receiveMessage', messagePayload);
-                
-                // Echo back to sender for device synchronization
-                io.to(`user:${socket.username}`).emit('receiveMessage', messagePayload);
-            }
-        });
+            db.run(query, [
+                socket.username, 
+                recipient, 
+                room, 
+                data.message || '', 
+                data.fileData || '', 
+                data.fileName || '', 
+                data.fileType || '', 
+                initialStatus
+            ], function(err) {
+                if (err) {
+                    console.error('Error saving message:', err.message);
+                    return;
+                }
+
+                const insertedId = this.lastID;
+                const messagePayload = {
+                    id: insertedId,
+                    sender: socket.username,
+                    recipient,
+                    room,
+                    message: data.message || '',
+                    fileData: data.fileData || '',
+                    fileName: data.fileName || '',
+                    fileType: data.fileType || '',
+                    status: initialStatus,
+                    reactions: '{}',
+                    time: timeStr
+                };
+
+                if (room) {
+                    io.to(room).emit('receiveMessage', messagePayload);
+                } else if (recipient) {
+                    io.to(`user:${recipient}`).emit('receiveMessage', messagePayload);
+                    io.to(`user:${socket.username}`).emit('receiveMessage', messagePayload);
+                }
+            });
+        }
     });
 
     // --- MESSAGE REACTION SYSTEM ---
@@ -304,7 +422,6 @@ io.on('connection', (socket) => {
                 reactions = {};
             }
 
-            // Toggle reaction: if exists with same emoji, remove it; else set it
             if (reactions[socket.username] === emoji) {
                 delete reactions[socket.username];
             } else {
@@ -332,7 +449,11 @@ io.on('connection', (socket) => {
         if (isGroup) {
             socket.to(target).emit('userTyping', { from: socket.username, room: target, isTyping });
         } else {
-            io.to(`user:${target}`).emit('userTyping', { from: socket.username, isTyping });
+            isBlockedRelationship(socket.username, target, (blocked) => {
+                if (!blocked) {
+                    io.to(`user:${target}`).emit('userTyping', { from: socket.username, isTyping });
+                }
+            });
         }
     });
 
@@ -360,13 +481,35 @@ io.on('connection', (socket) => {
         if (isGroup) {
             socket.to(target).emit('incomingCall', payload);
         } else {
-            io.to(`user:${target}`).emit('incomingCall', payload);
+            isBlockedRelationship(socket.username, target, (blocked) => {
+                if (!blocked) {
+                    io.to(`user:${target}`).emit('incomingCall', payload);
+                }
+            });
         }
     });
 
     socket.on('declineCall', ({ to }) => {
         if (!socket.username || !to) return;
         io.to(`user:${to}`).emit('callDeclined', { from: socket.username });
+    });
+
+    // --- LOGOUT ENGINE ---
+    socket.on('logout', () => {
+        if (socket.username) {
+            db.run('UPDATE users SET session_token = NULL WHERE username = ?', [socket.username], () => {
+                if (onlineUsers.has(socket.username)) {
+                    onlineUsers.get(socket.username).delete(socket.id);
+                    if (onlineUsers.get(socket.username).size === 0) {
+                        onlineUsers.delete(socket.username);
+                    }
+                }
+                socket.username = null;
+                socket.pfp = null;
+                socket.emit('logoutComplete');
+                broadcastUserDirectory();
+            });
+        }
     });
 
     // --- DISCONNECT HANDLING ---

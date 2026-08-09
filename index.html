@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>WhatsApp Chatz</title>
     <style>
-        /* Base Reset & Variables */
+        /* Base Reset & CSS Variables */
         :root {
             --bg-dark: #0c1317;
             --panel-bg: #111b21;
@@ -19,6 +19,7 @@
             --text-muted: #8696a0;
             --blue-tick: #53bdeb;
             --danger-red: #ea4335;
+            --warning-orange: #f59e0b;
         }
 
         * {
@@ -50,6 +51,7 @@
             max-width: 420px;
             text-align: center;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
         }
 
         #loginScreen h2 {
@@ -166,6 +168,27 @@
             object-fit: cover;
         }
 
+        .sidebar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 50%;
+        }
+
+        .icon-btn:hover {
+            background-color: var(--input-bg);
+            color: var(--text-primary);
+        }
+
         .notif-btn {
             font-size: 0.75rem;
             background: var(--input-bg);
@@ -242,6 +265,16 @@
             margin-left: auto;
         }
 
+        .blocked-badge {
+            background-color: var(--danger-red);
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: bold;
+            border-radius: 10px;
+            padding: 2px 6px;
+            margin-left: auto;
+        }
+
         .status-dot {
             width: 10px;
             height: 10px;
@@ -274,21 +307,25 @@
 
         .chat-header-actions {
             display: flex;
-            gap: 16px;
+            gap: 12px;
             align-items: center;
         }
 
-        .call-btn {
+        .call-btn, .block-btn {
             background: none;
             border: none;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             cursor: pointer;
             color: var(--accent-green);
-            padding: 4px;
+            padding: 6px;
             border-radius: 50%;
         }
 
-        .call-btn:hover {
+        .block-btn {
+            color: var(--danger-red);
+        }
+
+        .call-btn:hover, .block-btn:hover {
             background-color: var(--input-bg);
         }
 
@@ -440,6 +477,27 @@
             width: fit-content;
         }
 
+        /* Block Banner Overlay */
+        #blockedBanner {
+            background-color: rgba(234, 67, 53, 0.15);
+            border: 1px solid var(--danger-red);
+            color: #ff8b8b;
+            padding: 10px 16px;
+            text-align: center;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        #blockedBanner button {
+            background: var(--danger-red);
+            color: #fff;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+        }
+
         /* Footer Input Section */
         .chat-footer {
             background-color: var(--header-bg);
@@ -462,8 +520,8 @@
             position: absolute;
             bottom: 65px;
             left: 16px;
-            width: 320px;
-            height: 320px;
+            width: 360px;
+            height: 360px;
             background-color: var(--header-bg);
             border: 1px solid var(--input-bg);
             border-radius: 12px;
@@ -500,15 +558,16 @@
             padding: 12px;
             overflow-y: auto;
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 10px;
         }
 
         .sticker-item {
-            font-size: 2.8rem;
+            font-size: 2.6rem;
             text-align: center;
             cursor: pointer;
             transition: transform 0.15s;
+            user-select: none;
         }
 
         .sticker-item:hover {
@@ -517,10 +576,15 @@
 
         .gif-item {
             width: 100%;
-            height: 75px;
+            height: 80px;
             object-fit: cover;
             border-radius: 6px;
             cursor: pointer;
+            transition: transform 0.15s;
+        }
+
+        .gif-item:hover {
+            transform: scale(1.05);
         }
 
         /* Voice Note Recording */
@@ -575,7 +639,7 @@
         .btn-success { background-color: var(--accent-green); color: var(--panel-bg); }
         .btn-danger { background-color: var(--danger-red); color: #fff; }
 
-        /* Jitsi Overlay Video Call */
+        /* WebRTC Call Overlay */
         #callOverlay {
             position: absolute;
             top: 0;
@@ -640,7 +704,10 @@
                     <div class="user-avatar" id="myAvatarDisplay">👤</div>
                     <span id="myUsername" style="font-weight: 600;">Me</span>
                 </div>
-                <button class="notif-btn" id="enableNotifBtn">🔔 Enable Alerts</button>
+                <div class="sidebar-actions">
+                    <button class="notif-btn" id="enableNotifBtn">🔔 Alerts</button>
+                    <button class="icon-btn" id="logoutBtn" title="Log Out">🚪</button>
+                </div>
             </div>
 
             <div class="group-controls">
@@ -678,7 +745,13 @@
                         </label>
                         <button class="call-btn" id="audioCallBtn" title="Audio Call">📞</button>
                         <button class="call-btn" id="videoCallBtn" title="Video Call">📹</button>
+                        <button class="block-btn" id="blockToggleBtn" title="Block/Unblock User">🚫</button>
                     </div>
+                </div>
+
+                <div id="blockedBanner" class="hidden">
+                    <span>You have blocked this contact. You cannot send or receive messages.</span>
+                    <button id="unblockBannerBtn">Unblock</button>
                 </div>
 
                 <div class="chat-body" id="chatBody"></div>
@@ -737,6 +810,7 @@
         const myUsername = document.getElementById('myUsername');
         const myAvatarDisplay = document.getElementById('myAvatarDisplay');
         const enableNotifBtn = document.getElementById('enableNotifBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
         const contactsList = document.getElementById('contactsList');
         const groupsList = document.getElementById('groupsList');
         const groupNameInput = document.getElementById('groupNameInput');
@@ -752,6 +826,10 @@
         const fileInput = document.getElementById('fileInput');
         const bgFileInput = document.getElementById('bgFileInput');
         const backToSidebarBtn = document.getElementById('backToSidebarBtn');
+
+        const blockToggleBtn = document.getElementById('blockToggleBtn');
+        const blockedBanner = document.getElementById('blockedBanner');
+        const unblockBannerBtn = document.getElementById('unblockBannerBtn');
 
         const mediaPickerDrawer = document.getElementById('mediaPickerDrawer');
         const togglePickerBtn = document.getElementById('togglePickerBtn');
@@ -778,6 +856,7 @@
         let activeTarget = null;
         let isGroupChat = false;
         let joinedGroups = new Set();
+        let blockedUsers = new Set();
         let jitsiApi = null;
         let currentIncomingCall = null;
         let typingTimeout = null;
@@ -792,12 +871,40 @@
         let audioChunks = [];
         let isRecording = false;
 
-        const STICKERS = ['🔥', '👑', '🎉', '💩', '😎', '❤️', '🚀', '💯', '🍕', '🐱', '👻', '⭐', '🎈', '👍', '🏆', '🍔'];
+        // Expanded Catalog of Stickers and GIFs
+        const STICKERS = [
+            '🔥', '👑', '🎉', '💩', '😎', '❤️', '🚀', '💯', '🍕', '🐱', '👻', '⭐',
+            '🎈', '👍', '🏆', '🍔', '🐶', '🤖', '👾', '🌈', '⚡', '🥑', '🌮', '🍩',
+            '🥊', '🎯', '🎸', '🎮', '🦄', '🦁', '🐼', '🦊', '🎃', '💎', '🍿', '☕',
+            '🥳', '😴', '🤯', '🤩', '😇', '🙈', '🙉', '🙊', '☠️', '👽', '🤡', '👹'
+        ];
+
         const SAMPLE_GIFS = [
             'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbnFlc2p4amR2eTNqem9kcnE3OHZlYzB4Mmtic2plZnVrbjhhNzV4OCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l0HlHJGHe3yAMhdQY/giphy.gif',
             'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDdxMnRzNHU3eDRjYmVqcncybmhyMXpncHRvNmRrcXR3OTI5c3V2OCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKsjRrfIPjeiVyM/giphy.gif',
-            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExc2J1bjNsc3B6bWFndXByenR1am96aGVidDRiZHFlZXRkMmdyM2tzMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l41K3o5TKSFi88C5O/giphy.gif'
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExc2J1bjNsc3B6bWFndXByenR1am96aGVidDRiZHFlZXRkMmdyM2tzMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l41K3o5TKSFi88C5O/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3Z0bnZxeTJ5bXpzeWZkY2N4dnpsZGg3M3E4Znh1NnRxbzRzc3d0eSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/d31w24psGYeekCZy/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExazdzMGt4c3I5ZXU4am84N2Zzc3c0Nm0yYWhmNmd4azcxbGNrcnI0OCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l3q2K5jinAlChoCLS/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbDVqdzJmNXRtbGNmOHp6ZjNlZWl1NDdqYm1sdGNsbnAxdThpdTJmMSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xT0xeJpnrWC4XWblEk/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcXR2NW9rN3gwbWZ4ZXFxejBscjA3bnV1N2lydHVtN3YwY2E4OW40MSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/G96zt9713C12g/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaGcxMjlycnE2Nndrcm40eTBia3A4cTBrc2M0dzRqNm8ycGNhNmszeCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/11sBLVx287ECmQ/giphy.gif'
         ];
+
+        /* --- AUTOMATIC PERSISTENT AUTO-LOGIN ON PAGE LOAD --- */
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedSession = localStorage.getItem('chatz_session_token');
+            if (savedSession) {
+                socket.emit('autoLogin', { sessionToken: savedSession });
+            }
+        });
+
+        socket.on('autoLoginResponse', (res) => {
+            if (res.success) {
+                setupUserSession(res);
+            } else {
+                localStorage.removeItem('chatz_session_token');
+            }
+        });
 
         /* --- SOUND SYNTHESIS ENGINE --- */
         function playAlertSound() {
@@ -807,8 +914,8 @@
                 const gain = ctx.createGain();
 
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5 note
-                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5 note
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
 
                 gain.gain.setValueAtTime(0.15, ctx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
@@ -996,29 +1103,91 @@
 
         socket.on('loginResponse', (res) => {
             if (res.success) {
-                myUsername.textContent = res.user.username;
-                currentPfp = res.user.pfp || '👤';
-                unreadCounts = res.unreadMap || {};
-
-                if (currentPfp.startsWith('data:image')) {
-                    myAvatarDisplay.innerHTML = `<img src="${currentPfp}">`;
-                } else {
-                    myAvatarDisplay.textContent = currentPfp;
-                }
-
-                loginScreen.classList.add('hidden');
-                appContainer.classList.remove('hidden');
-
-                if (res.groups) {
-                    res.groups.forEach(g => joinedGroups.add(g));
-                    renderGroupsList();
-                }
-
-                requestNotificationPermission();
+                setupUserSession(res);
             } else {
                 alert(res.msg);
             }
         });
+
+        function setupUserSession(res) {
+            currentUser = res.user.username;
+            myUsername.textContent = currentUser;
+            currentPfp = res.user.pfp || '👤';
+            unreadCounts = res.unreadMap || {};
+            blockedUsers = new Set(res.blockedList || []);
+
+            if (res.user.sessionToken) {
+                localStorage.setItem('chatz_session_token', res.user.sessionToken);
+            }
+
+            if (currentPfp.startsWith('data:image')) {
+                myAvatarDisplay.innerHTML = `<img src="${currentPfp}">`;
+            } else {
+                myAvatarDisplay.textContent = currentPfp;
+            }
+
+            loginScreen.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+
+            if (res.groups) {
+                res.groups.forEach(g => joinedGroups.add(g));
+                renderGroupsList();
+            }
+
+            requestNotificationPermission();
+        }
+
+        logoutBtn.onclick = () => {
+            localStorage.removeItem('chatz_session_token');
+            socket.emit('logout');
+        };
+
+        socket.on('logoutComplete', () => {
+            location.reload();
+        });
+
+        /* --- USER BLOCKING UI HANDLERS --- */
+        blockToggleBtn.onclick = () => {
+            if (!activeTarget || isGroupChat) return;
+
+            if (blockedUsers.has(activeTarget)) {
+                socket.emit('unblockUser', activeTarget);
+            } else {
+                if (confirm(`Are you sure you want to block ${activeTarget}?`)) {
+                    socket.emit('blockUser', activeTarget);
+                }
+            }
+        };
+
+        unblockBannerBtn.onclick = () => {
+            if (activeTarget && !isGroupChat) {
+                socket.emit('unblockUser', activeTarget);
+            }
+        };
+
+        socket.on('blockedListUpdated', (list) => {
+            blockedUsers = new Set(list);
+            renderContactsList();
+
+            if (activeTarget && !isGroupChat) {
+                updateBlockUIState();
+            }
+        });
+
+        function updateBlockUIState() {
+            const isBlocked = blockedUsers.has(activeTarget);
+            if (isBlocked) {
+                blockedBanner.classList.remove('hidden');
+                chatForm.classList.add('hidden');
+                blockToggleBtn.title = "Unblock User";
+                blockToggleBtn.style.color = "var(--text-muted)";
+            } else {
+                blockedBanner.classList.add('hidden');
+                chatForm.classList.remove('hidden');
+                blockToggleBtn.title = "Block User";
+                blockToggleBtn.style.color = "var(--danger-red)";
+            }
+        }
 
         joinGroupBtn.onclick = () => {
             const roomName = groupNameInput.value.trim();
@@ -1073,9 +1242,13 @@
                     const count = unreadCounts[user.username] || 0;
                     const badgeHtml = count > 0 ? `<span class="unread-badge">${count}</span>` : '';
 
+                    const isBlocked = blockedUsers.has(user.username) || user.isBlocked;
+                    const blockBadgeHtml = isBlocked ? `<span class="blocked-badge">Blocked</span>` : '';
+
                     item.innerHTML = `
                         ${avatarHtml}
                         <div style="flex:1;"><b>${user.username}</b></div>
+                        ${blockBadgeHtml}
                         ${badgeHtml}
                         <span class="status-dot ${statusClass}" title="${statusText}"></span>
                     `;
@@ -1091,8 +1264,13 @@
 
             if (isGroupChat) {
                 unreadCounts[`group:${target}`] = 0;
+                blockToggleBtn.classList.add('hidden');
+                blockedBanner.classList.add('hidden');
+                chatForm.classList.remove('hidden');
             } else {
                 unreadCounts[target] = 0;
+                blockToggleBtn.classList.remove('hidden');
+                updateBlockUIState();
             }
 
             activeContactName.textContent = isGroupChat ? `#${target}` : target;
@@ -1134,6 +1312,10 @@
             }
         });
 
+        socket.on('systemNotification', (data) => {
+            alert(data.text);
+        });
+
         /* --- FILE ATTACHMENTS & TRANSMISSION --- */
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -1149,6 +1331,12 @@
 
         function sendDirectPayload(msgText, fileData, fileType, fileName) {
             if (!activeTarget) return;
+
+            if (!isGroupChat && blockedUsers.has(activeTarget)) {
+                alert('You cannot send messages to a blocked contact.');
+                return;
+            }
+
             let msgData = msgText;
 
             if (!isGroupChat && msgText) {
@@ -1324,6 +1512,11 @@
         /* --- WEBRTC AUDIO/VIDEO CALLING (JITSI API) --- */
         function launchCall(startWithAudioOnly) {
             if (!activeTarget) return;
+
+            if (!isGroupChat && blockedUsers.has(activeTarget)) {
+                alert('Cannot initiate call with a blocked contact.');
+                return;
+            }
 
             const callRoomName = isGroupChat 
                 ? `chatz-group-${activeTarget.toLowerCase().replace(/[^a-z0-9]/g, '')}`
