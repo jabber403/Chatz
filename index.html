@@ -62,6 +62,7 @@
         .bubble-footer { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 4px; }
         .bubble-time { font-size: 0.65rem; color: #8696a0; }
         .tick-icon { font-size: 0.75rem; color: #8696a0; font-weight: bold; }
+        .tick-icon.delivered { color: #8696a0; }
         .tick-icon.read { color: #53bdeb; }
 
         .chat-img, .chat-video { max-width: 100%; max-height: 250px; border-radius: 8px; margin-top: 4px; }
@@ -75,6 +76,12 @@
 
         .chat-footer { background-color: #202c33; padding: 10px 16px; display: flex; align-items: center; gap: 8px; position: relative; }
         .chat-footer input[type="text"] { flex: 1; background-color: #2a3942; }
+
+        .file-attachment-box {
+            display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.25);
+            padding: 8px 12px; border-radius: 6px; margin-top: 4px; font-size: 0.85rem; word-break: break-all;
+        }
+        .file-attachment-box a { color: #53bdeb; text-decoration: none; font-weight: bold; }
 
         #mediaPickerDrawer {
             position: absolute; bottom: 65px; left: 16px; width: 300px; height: 260px;
@@ -92,7 +99,7 @@
         .record-btn.recording { color: #ea4335; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
-        /* INCOMING CALL MODAL (PHONE / MESSAGING STYLE) */
+        /* CALL OVERLAY & SCREEN (WEBRTC) */
         #incomingCallModal {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(11, 20, 26, 0.95); backdrop-filter: blur(8px);
@@ -121,14 +128,20 @@
         .btn-accept { background-color: #00a884; }
         .btn-decline { background-color: #ea4335; }
 
-        /* CALL OVERLAY */
-        #callOverlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(11, 20, 26, 0.98); z-index: 200;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        #webrtcCallScreen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000; z-index: 600; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
         }
-        #jitsiContainer { width: 100%; height: 85%; }
-        .call-controls { height: 15%; display: flex; align-items: center; justify-content: center; gap: 16px; }
+        #remoteVideo { width: 100%; height: 100%; object-fit: cover; background: #111b21; }
+        #localVideo {
+            position: absolute; bottom: 90px; right: 20px; width: 110px; height: 160px;
+            object-fit: cover; border-radius: 12px; border: 2px solid #00a884; box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            background: #202c33; z-index: 610;
+        }
+        .webrtc-controls {
+            position: absolute; bottom: 20px; display: flex; gap: 20px; z-index: 620;
+        }
 
         @media (max-width: 768px) {
             .sidebar { width: 100%; }
@@ -139,7 +152,6 @@
             #mediaPickerDrawer { width: 90%; left: 5%; }
         }
     </style>
-    <script src="https://meet.jit.si/external_api.js"></script>
 </head>
 <body>
 
@@ -152,7 +164,7 @@
 
         <div class="pfp-preview" id="pfpPreview">👤</div>
         <form id="authForm" class="login-form">
-            <input type="text" id="usernameInput" placeholder="Username" required>
+            <input type="text" id="usernameInput" placeholder="Username" required autocomplete="off">
             <input type="password" id="passwordInput" placeholder="Password" required>
             
             <div id="pfpFields" class="hidden">
@@ -227,7 +239,7 @@
 
                 <form id="chatForm" class="chat-footer">
                     <button type="button" id="togglePickerBtn" style="background:none; border:none; font-size:1.3rem; cursor:pointer;" title="Stickers & GIFs">👾</button>
-                    <label style="cursor:pointer; font-size:1.2rem;" title="Attach File">
+                    <label style="cursor:pointer; font-size:1.2rem;" title="Attach Any File">
                         📎 <input type="file" id="fileInput" style="display:none;">
                     </label>
                     <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off">
@@ -248,10 +260,11 @@
                 </div>
             </div>
 
-            <div id="callOverlay" class="hidden">
-                <div id="jitsiContainer"></div>
-                <div class="call-controls">
-                    <button id="endCallBtn" class="logout-btn" style="background-color:#ea4335; color:#fff; padding:10px 20px; border-radius:8px; font-size:1rem;">Leave Call</button>
+            <div id="webrtcCallScreen" class="hidden">
+                <video id="remoteVideo" autoplay playsinline></video>
+                <video id="localVideo" autoplay playsinline muted></video>
+                <div class="webrtc-controls">
+                    <button class="call-action-btn btn-decline" id="endWebRTCCallBtn">Hang Up</button>
                 </div>
             </div>
         </div>
@@ -311,9 +324,10 @@
         const acceptIncomingCallBtn = document.getElementById('acceptIncomingCallBtn');
         const declineIncomingCallBtn = document.getElementById('declineIncomingCallBtn');
 
-        const callOverlay = document.getElementById('callOverlay');
-        const jitsiContainer = document.getElementById('jitsiContainer');
-        const endCallBtn = document.getElementById('endCallBtn');
+        const webrtcCallScreen = document.getElementById('webrtcCallScreen');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const localVideo = document.getElementById('localVideo');
+        const endWebRTCCallBtn = document.getElementById('endWebRTCCallBtn');
         const audioCallBtn = document.getElementById('audioCallBtn');
         const videoCallBtn = document.getElementById('videoCallBtn');
 
@@ -324,7 +338,6 @@
         let activeTarget = null;
         let isGroupChat = false;
         let joinedGroups = new Set();
-        let jitsiApi = null;
         let currentIncomingCall = null;
         let typingTimeout = null;
 
@@ -336,14 +349,25 @@
         let audioChunks = [];
         let isRecording = false;
 
-        const STICKERS = ['🔥', '👑', '🎉', '💩', '😎', '❤️', '🚀', '💯', '🍕', '🐱', '👻', '⭐'];
+        /* WEBRTC CALLING STATE */
+        let peerConnection = null;
+        let localStream = null;
+        let callTargetUser = null;
+        const rtcConfig = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        const STICKERS = ['🔥', '👑', '🎉', '💩', '😎', '❤️', '🚀', '💯', '🍕', '🐱', 'ghost', '⭐'];
         const SAMPLE_GIFS = [
             'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbnFlc2p4amR2eTNqem9kcnE3OHZlYzB4Mmtic2plZnVrbjhhNzV4OCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l0HlHJGHe3yAMhdQY/giphy.gif',
             'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDdxMnRzNHU3eDRjYmVqcncybmhyMXpncHRvNmRrcXR3OTI5c3V2OCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKsjRrfIPjeiVyM/giphy.gif',
             'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExc2J1bjNsc3B6bWFndXByenR1am96aGVidDRiZHFlZXRkMmdyM2tzMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l41K3o5TKSFi88C5O/giphy.gif'
         ];
 
-        // PUSH NOTIFICATION REQUEST
+        // NOTIFICATION SUPPORT
         function requestNotificationPermission() {
             if ("Notification" in window && Notification.permission !== "granted") {
                 Notification.requestPermission();
@@ -356,7 +380,6 @@
             }
         }
 
-        // TOGGLE LOGIN / SIGNUP TABS
         tabLogin.onclick = () => {
             isSignupMode = false;
             tabLogin.classList.add('active');
@@ -373,7 +396,6 @@
             authSubmitBtn.textContent = 'Sign Up';
         };
 
-        // AUTO-LOGIN PERSISTENCE
         window.addEventListener('DOMContentLoaded', () => {
             const savedUser = localStorage.getItem('chatz_saved_session');
             if (savedUser) {
@@ -639,14 +661,17 @@
             }
         });
 
+        // ALLOW ANY FILE TYPE AND BIG FILES
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
                 selectedFileName = file.name;
-                selectedFileType = file.type;
+                selectedFileType = file.type || 'application/octet-stream';
 
                 const reader = new FileReader();
-                reader.onload = (evt) => selectedFileData = evt.target.result;
+                reader.onload = (evt) => {
+                    selectedFileData = evt.target.result;
+                };
                 reader.readAsDataURL(file);
             }
         });
@@ -710,12 +735,23 @@
                 }
             }
 
-            // TRIGGER PUSH NOTIFICATION FOR INCOMING MESSAGES
             if (data.sender !== currentUser) {
                 triggerPushNotification(`New message from ${data.sender}`, {
-                    body: data.decryptedMessage || 'Sent a file/attachment',
+                    body: data.decryptedMessage || 'Sent an attachment',
                     icon: '💬'
                 });
+            }
+        });
+
+        // REAL-TIME DELIVERED & READ RECEIPTS
+        socket.on('messageDelivered', ({ msgId }) => {
+            const bubbleEl = document.getElementById(`msg-${msgId}`);
+            if (bubbleEl) {
+                const tickEl = bubbleEl.querySelector('.tick-icon');
+                if (tickEl && !tickEl.classList.contains('read')) {
+                    tickEl.textContent = '✓✓';
+                    tickEl.classList.add('delivered');
+                }
             }
         });
 
@@ -723,7 +759,7 @@
             if (!isGroupChat && data.by === activeTarget) {
                 document.querySelectorAll('.tick-icon').forEach(tick => {
                     tick.textContent = '✓✓';
-                    tick.classList.add('read');
+                    tick.className = 'tick-icon read';
                 });
             }
         });
@@ -771,11 +807,20 @@
                 } else if (type.startsWith('audio/')) {
                     bodyContent += `<audio src="${data.fileData}" controls class="chat-audio"></audio>`;
                 } else {
-                    bodyContent += `<a href="${data.fileData}" download="${data.fileName || 'download'}" style="color:#38bdf8;">💾 Download ${data.fileName || 'File'}</a>`;
+                    // UNIVERSAL DOWNLOAD LINK FOR ANY FILE EXTENSION (.nap, .zip, etc.)
+                    bodyContent += `
+                        <div class="file-attachment-box">
+                            <span>📄</span>
+                            <div style="flex:1;">
+                                <div><b>${data.fileName || 'Attachment'}</b></div>
+                                <a href="${data.fileData}" download="${data.fileName || 'file.bin'}">💾 Download File</a>
+                            </div>
+                        </div>
+                    `;
                 }
             }
 
-            let tickStr = '';
+            let tickStr = '✓';
             let tickClass = 'tick-icon';
 
             if (isOutgoing && !isGroupChat) {
@@ -784,8 +829,7 @@
                     tickClass = 'tick-icon read';
                 } else if (data.status === 'delivered') {
                     tickStr = '✓✓';
-                } else {
-                    tickStr = '✓';
+                    tickClass = 'tick-icon delivered';
                 }
             }
 
@@ -809,64 +853,64 @@
             socket.emit('addReaction', { msgId, emoji, target: activeTarget, isGroup: isGroupChat });
         };
 
-        function launchCall(startWithAudioOnly) {
-            if (!activeTarget) return;
+        /* ================= WEBRTC DIRECT CALLING SYSTEM ================= */
 
-            const callRoomName = isGroupChat 
-                ? `chatz-group-${activeTarget.toLowerCase().replace(/[^a-z0-9]/g, '')}`
-                : `chatz-dm-${[currentUser, activeTarget].sort().join('-')}`;
-
-            socket.emit('startCallNotification', {
-                target: activeTarget,
-                isGroup: isGroupChat,
-                callRoomName,
-                isAudioOnly: startWithAudioOnly,
-                senderPfp: currentPfp
-            });
-
-            joinJitsiRoom(callRoomName, startWithAudioOnly);
+        async function initMedia(isVideo) {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                    video: isVideo ? { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } : false
+                });
+                localVideo.srcObject = localStream;
+                return true;
+            } catch(e) {
+                alert('Camera / Microphone permission denied.');
+                return false;
+            }
         }
 
-        function joinJitsiRoom(callRoomName, startWithAudioOnly) {
-            callOverlay.classList.remove('hidden');
-            incomingCallModal.classList.add('hidden');
-            jitsiContainer.innerHTML = '';
+        function createPeerConnection(targetUser) {
+            peerConnection = new RTCPeerConnection(rtcConfig);
 
-            const domain = 'meet.jit.si';
-            const options = {
-                roomName: callRoomName,
-                width: '100%',
-                height: '100%',
-                parentNode: jitsiContainer,
-                userInfo: { displayName: currentUser },
-                configOverwrite: {
-                    startAudioOnly: startWithAudioOnly,
-                    disableDeepLinking: true,
-                    prejoinPageEnabled: false,
-                    enableWelcomePage: false,
-                    startWithAudioMuted: false,
-                    startWithVideoMuted: startWithAudioOnly,
-                    resolution: 360,
-                    p2p: { enabled: true }
-                },
-                interfaceConfigOverwrite: {
-                    TOOLBAR_BUTTONS: ['microphone', 'camera', 'desktop', 'hangup', 'tileview'],
-                    SHOW_JITSI_WATERMARK: false
+            if (localStream) {
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            }
+
+            peerConnection.ontrack = (event) => {
+                if (event.streams && event.streams[0]) {
+                    remoteVideo.srcObject = event.streams[0];
                 }
             };
 
-            jitsiApi = new JitsiMeetExternalAPI(domain, options);
-            const iframe = jitsiApi.getIFrame();
-            if (iframe) iframe.setAttribute('allow', 'camera; microphone; display-capture; autoplay; clipboard-write');
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('webrtc-ice-candidate', { target: targetUser, candidate: event.candidate });
+                }
+            };
+        }
 
-            jitsiApi.addEventListeners({ videoConferenceLeft: closeCallUI });
+        async function launchCall(startWithAudioOnly) {
+            if (!activeTarget || isGroupChat) return;
+
+            callTargetUser = activeTarget;
+            const success = await initMedia(!startWithAudioOnly);
+            if (!success) return;
+
+            webrtcCallScreen.classList.remove('hidden');
+
+            socket.emit('startCallNotification', {
+                target: activeTarget,
+                isGroup: false,
+                isAudioOnly: startWithAudioOnly,
+                senderPfp: currentPfp
+            });
         }
 
         socket.on('incomingCall', (data) => {
             currentIncomingCall = data;
             const typeText = data.isAudioOnly ? 'Incoming Audio Call...' : 'Incoming Video Call...';
             
-            callerNameDisplay.textContent = data.isGroup ? `${data.from} (#${data.groupName})` : data.from;
+            callerNameDisplay.textContent = data.from;
             callTypeSubtitle.textContent = typeText;
 
             if (data.senderPfp && data.senderPfp.startsWith('data:image')) {
@@ -877,42 +921,95 @@
 
             incomingCallModal.classList.remove('hidden');
 
-            // PUSH NOTIFICATION FOR CALLS
             triggerPushNotification(`Incoming Call from ${data.from}`, {
                 body: typeText,
                 icon: '📞'
             });
         });
 
-        acceptIncomingCallBtn.onclick = () => {
-            if (currentIncomingCall) {
-                joinJitsiRoom(currentIncomingCall.callRoomName, currentIncomingCall.isAudioOnly);
-            }
+        acceptIncomingCallBtn.onclick = async () => {
+            if (!currentIncomingCall) return;
+            callTargetUser = currentIncomingCall.from;
+            
+            incomingCallModal.classList.add('hidden');
+            webrtcCallScreen.classList.remove('hidden');
+
+            const isAudioOnly = currentIncomingCall.isAudioOnly;
+            await initMedia(!isAudioOnly);
+            createPeerConnection(callTargetUser);
+
+            socket.emit('accept-call', { to: callTargetUser });
         };
 
         declineIncomingCallBtn.onclick = () => {
-            if (currentIncomingCall && !currentIncomingCall.isGroup) {
+            if (currentIncomingCall) {
                 socket.emit('declineCall', { to: currentIncomingCall.from });
             }
             incomingCallModal.classList.add('hidden');
             currentIncomingCall = null;
         };
 
-        socket.on('callDeclined', ({ from }) => {
-            alert(`${from} declined the call.`);
-            closeCallUI();
+        socket.on('call-accepted', async ({ from }) => {
+            createPeerConnection(from);
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            socket.emit('webrtc-offer', { target: from, offer });
         });
 
-        endCallBtn.onclick = closeCallUI;
+        socket.on('webrtc-offer', async ({ from, offer }) => {
+            callTargetUser = from;
+            if (!peerConnection) createPeerConnection(from);
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            socket.emit('webrtc-answer', { target: from, answer });
+        });
 
-        function closeCallUI() {
-            if (jitsiApi) {
-                jitsiApi.dispose();
-                jitsiApi = null;
+        socket.on('webrtc-answer', async ({ answer }) => {
+            if (peerConnection) {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
             }
-            callOverlay.classList.add('hidden');
+        });
+
+        socket.on('webrtc-ice-candidate', async ({ candidate }) => {
+            if (peerConnection && candidate) {
+                try {
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                } catch(e) {}
+            }
+        });
+
+        socket.on('callDeclined', ({ from }) => {
+            alert(`${from} declined the call.`);
+            endCall();
+        });
+
+        socket.on('call-ended', () => {
+            endCall();
+        });
+
+        endWebRTCCallBtn.onclick = () => {
+            if (callTargetUser) {
+                socket.emit('end-call', { target: callTargetUser });
+            }
+            endCall();
+        };
+
+        function endCall() {
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            remoteVideo.srcObject = null;
+            localVideo.srcObject = null;
+            webrtcCallScreen.classList.add('hidden');
             incomingCallModal.classList.add('hidden');
-            jitsiContainer.innerHTML = '';
+            callTargetUser = null;
+            currentIncomingCall = null;
         }
 
         audioCallBtn.onclick = () => launchCall(true);
