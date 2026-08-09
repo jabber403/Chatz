@@ -10,14 +10,21 @@
 
         .hidden { display: none !important; }
 
-        #loginScreen { background-color: #111b21; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        #loginScreen h2 { color: #00a884; margin-bottom: 20px; }
+        /* AUTH CONTAINER */
+        #authContainer { background-color: #111b21; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        #authContainer h2 { color: #00a884; margin-bottom: 10px; }
+        
+        .auth-tabs { display: flex; border-bottom: 2px solid #2a3942; margin-bottom: 20px; }
+        .auth-tab { flex: 1; padding: 10px; cursor: pointer; font-weight: bold; color: #8696a0; }
+        .auth-tab.active { color: #00a884; border-bottom: 2px solid #00a884; }
+
         .login-form { display: flex; flex-direction: column; gap: 12px; }
         input, select { background-color: #2a3942; border: none; color: #d1d7db; padding: 12px; border-radius: 8px; outline: none; font-size: 1rem; }
         button { background-color: #00a884; color: #111b21; font-weight: 700; padding: 12px; border: none; border-radius: 8px; cursor: pointer; }
 
         .pfp-preview { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #00a884; margin: 0 auto 10px; background: #202c33; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; }
 
+        /* MAIN APP */
         #appContainer { width: 100vw; height: 100vh; display: flex; background-color: #111b21; position: relative; }
         .sidebar { width: 320px; background-color: #111b21; border-right: 1px solid #222d34; display: flex; flex-direction: column; height: 100%; flex-shrink: 0; }
         .sidebar-header { background-color: #202c33; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
@@ -60,7 +67,6 @@
         .chat-img, .chat-video { max-width: 100%; max-height: 250px; border-radius: 8px; margin-top: 4px; }
         .chat-audio { max-width: 100%; margin-top: 4px; }
 
-        /* REACTION OVERLAY */
         .reaction-bar { display: none; position: absolute; top: -35px; right: 0; background: #202c33; border: 1px solid #00a884; border-radius: 20px; padding: 2px 8px; gap: 6px; z-index: 50; }
         .bubble:hover .reaction-bar { display: flex; }
         .reaction-btn { cursor: pointer; font-size: 1rem; transition: transform 0.1s; }
@@ -70,7 +76,6 @@
         .chat-footer { background-color: #202c33; padding: 10px 16px; display: flex; align-items: center; gap: 8px; position: relative; }
         .chat-footer input[type="text"] { flex: 1; background-color: #2a3942; }
 
-        /* MEDIA PICKER DRAWER */
         #mediaPickerDrawer {
             position: absolute; bottom: 65px; left: 16px; width: 300px; height: 260px;
             background-color: #202c33; border: 1px solid #2a3942; border-radius: 12px;
@@ -87,17 +92,36 @@
         .record-btn.recording { color: #ea4335; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
-        #incomingCallBox {
-            position: absolute; top: 20px; right: 20px; z-index: 300;
-            background-color: #202c33; border: 2px solid #00a884; border-radius: 12px;
-            padding: 16px; width: 280px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center;
+        /* INCOMING CALL MODAL (PHONE / MESSAGING STYLE) */
+        #incomingCallModal {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(11, 20, 26, 0.95); backdrop-filter: blur(8px);
+            z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+            padding: 60px 20px; text-align: center;
         }
-        .call-actions { display: flex; gap: 10px; width: 100%; }
-        .call-actions button { flex: 1; }
-        .btn-success { background-color: #00a884; color: #111b21; }
-        .btn-danger { background-color: #ea4335; color: #fff; }
+        .caller-avatar {
+            width: 110px; height: 110px; border-radius: 50%; object-fit: cover;
+            border: 4px solid #00a884; margin-bottom: 15px; font-size: 3.5rem;
+            display: flex; align-items: center; justify-content: center; background: #202c33;
+            animation: ringPulse 1.5s infinite;
+        }
+        @keyframes ringPulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 168, 132, 0.7); }
+            70% { box-shadow: 0 0 0 25px rgba(0, 168, 132, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 168, 132, 0); }
+        }
+        .caller-name { font-size: 1.8rem; font-weight: bold; margin-bottom: 8px; color: #e9edef; }
+        .call-type-subtitle { font-size: 1.1rem; color: #00a884; font-weight: 500; }
+        .call-action-btns { display: flex; gap: 40px; width: 100%; max-width: 300px; justify-content: center; }
+        .call-action-btn {
+            width: 70px; height: 70px; border-radius: 50%; border: none; font-size: 1.8rem;
+            display: flex; align-items: center; justify-content: center; cursor: pointer; color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        .btn-accept { background-color: #00a884; }
+        .btn-decline { background-color: #ea4335; }
 
+        /* CALL OVERLAY */
         #callOverlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(11, 20, 26, 0.98); z-index: 200;
@@ -106,13 +130,9 @@
         #jitsiContainer { width: 100%; height: 85%; }
         .call-controls { height: 15%; display: flex; align-items: center; justify-content: center; gap: 16px; }
 
-        /* MOBILE SPECIFIC STYLES */
         @media (max-width: 768px) {
             .sidebar { width: 100%; }
-            .chat-area { 
-                position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-                z-index: 20; display: none; 
-            }
+            .chat-area { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; display: none; }
             .chat-area.mobile-active { display: flex; }
             .mobile-back-btn { display: inline-block; }
             .bubble { max-width: 85%; }
@@ -123,18 +143,25 @@
 </head>
 <body>
 
-    <div id="loginScreen">
-        <h2>WhatsApp Chatz</h2>
+    <div id="authContainer">
+        <h2>Chatz</h2>
+        <div class="auth-tabs">
+            <div class="auth-tab active" id="tabLogin">Log In</div>
+            <div class="auth-tab" id="tabSignup">Sign Up</div>
+        </div>
+
         <div class="pfp-preview" id="pfpPreview">👤</div>
-        <form id="loginForm" class="login-form">
+        <form id="authForm" class="login-form">
             <input type="text" id="usernameInput" placeholder="Username" required>
             <input type="password" id="passwordInput" placeholder="Password" required>
             
-            <label style="font-size:0.8rem; color:#8696a0; text-align:left;">Custom Profile Picture (File or Emoji):</label>
-            <input type="file" id="pfpFileInput" accept="image/*">
-            <input type="text" id="pfpEmojiInput" placeholder="Or enter emoji (e.g. 🦊, 🚀, 👑)">
+            <div id="pfpFields" class="hidden">
+                <label style="font-size:0.8rem; color:#8696a0; text-align:left; display:block; margin-top:4px;">Custom Avatar (File or Emoji):</label>
+                <input type="file" id="pfpFileInput" accept="image/*">
+                <input type="text" id="pfpEmojiInput" placeholder="Or enter emoji (e.g. 🦊, 👑)">
+            </div>
 
-            <button type="submit">Start Chatting</button>
+            <button type="submit" id="authSubmitBtn">Log In</button>
         </form>
     </div>
 
@@ -209,18 +236,22 @@
                 </form>
             </div>
 
-            <div id="incomingCallBox" class="hidden">
-                <div id="incomingCallText" style="font-weight: bold;">Incoming Call...</div>
-                <div class="call-actions">
-                    <button id="acceptIncomingCallBtn" class="btn-success">Accept</button>
-                    <button id="declineIncomingCallBtn" class="btn-danger">Decline</button>
+            <div id="incomingCallModal" class="hidden">
+                <div>
+                    <div class="caller-avatar" id="callerAvatarDisplay">👤</div>
+                    <div class="caller-name" id="callerNameDisplay">Incoming Caller</div>
+                    <div class="call-type-subtitle" id="callTypeSubtitle">Incoming Video Call...</div>
+                </div>
+                <div class="call-action-btns">
+                    <button class="call-action-btn btn-decline" id="declineIncomingCallBtn">✕</button>
+                    <button class="call-action-btn btn-accept" id="acceptIncomingCallBtn">📞</button>
                 </div>
             </div>
 
             <div id="callOverlay" class="hidden">
                 <div id="jitsiContainer"></div>
                 <div class="call-controls">
-                    <button id="endCallBtn" class="btn-danger">Leave Call</button>
+                    <button id="endCallBtn" class="logout-btn" style="background-color:#ea4335; color:#fff; padding:10px 20px; border-radius:8px; font-size:1rem;">Leave Call</button>
                 </div>
             </div>
         </div>
@@ -230,9 +261,14 @@
     <script>
         const socket = io({ reconnection: true, reconnectionDelay: 1000 });
 
-        const loginScreen = document.getElementById('loginScreen');
+        const authContainer = document.getElementById('authContainer');
+        const tabLogin = document.getElementById('tabLogin');
+        const tabSignup = document.getElementById('tabSignup');
+        const authForm = document.getElementById('authForm');
+        const authSubmitBtn = document.getElementById('authSubmitBtn');
+        const pfpFields = document.getElementById('pfpFields');
+
         const appContainer = document.getElementById('appContainer');
-        const loginForm = document.getElementById('loginForm');
         const usernameInput = document.getElementById('usernameInput');
         const passwordInput = document.getElementById('passwordInput');
         const pfpFileInput = document.getElementById('pfpFileInput');
@@ -268,8 +304,10 @@
 
         const voiceRecordBtn = document.getElementById('voiceRecordBtn');
 
-        const incomingCallBox = document.getElementById('incomingCallBox');
-        const incomingCallText = document.getElementById('incomingCallText');
+        const incomingCallModal = document.getElementById('incomingCallModal');
+        const callerAvatarDisplay = document.getElementById('callerAvatarDisplay');
+        const callerNameDisplay = document.getElementById('callerNameDisplay');
+        const callTypeSubtitle = document.getElementById('callTypeSubtitle');
         const acceptIncomingCallBtn = document.getElementById('acceptIncomingCallBtn');
         const declineIncomingCallBtn = document.getElementById('declineIncomingCallBtn');
 
@@ -279,6 +317,7 @@
         const audioCallBtn = document.getElementById('audioCallBtn');
         const videoCallBtn = document.getElementById('videoCallBtn');
 
+        let isSignupMode = false;
         let currentUser = "";
         let currentPassword = "";
         let currentPfp = "👤";
@@ -304,7 +343,37 @@
             'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExc2J1bjNsc3B6bWFndXByenR1am96aGVidDRiZHFlZXRkMmdyM2tzMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l41K3o5TKSFi88C5O/giphy.gif'
         ];
 
-        // AUTO LOGIN PERSISTENCE CHECK
+        // PUSH NOTIFICATION REQUEST
+        function requestNotificationPermission() {
+            if ("Notification" in window && Notification.permission !== "granted") {
+                Notification.requestPermission();
+            }
+        }
+
+        function triggerPushNotification(title, options) {
+            if ("Notification" in window && Notification.permission === "granted" && document.hidden) {
+                new Notification(title, options);
+            }
+        }
+
+        // TOGGLE LOGIN / SIGNUP TABS
+        tabLogin.onclick = () => {
+            isSignupMode = false;
+            tabLogin.classList.add('active');
+            tabSignup.classList.remove('active');
+            pfpFields.classList.add('hidden');
+            authSubmitBtn.textContent = 'Log In';
+        };
+
+        tabSignup.onclick = () => {
+            isSignupMode = true;
+            tabSignup.classList.add('active');
+            tabLogin.classList.remove('active');
+            pfpFields.classList.remove('hidden');
+            authSubmitBtn.textContent = 'Sign Up';
+        };
+
+        // AUTO-LOGIN PERSISTENCE
         window.addEventListener('DOMContentLoaded', () => {
             const savedUser = localStorage.getItem('chatz_saved_session');
             if (savedUser) {
@@ -313,7 +382,7 @@
                     currentUser = parsed.username;
                     currentPassword = parsed.password;
                     currentPfp = parsed.pfp || "👤";
-                    socket.emit('login', { username: currentUser, password: currentPassword, pfp: currentPfp });
+                    socket.emit('login', { username: currentUser, password: currentPassword, pfp: currentPfp, isSignup: false });
                 } catch(e) {}
             }
         });
@@ -415,15 +484,13 @@
                     mediaRecorder.start();
                     isRecording = true;
                     voiceRecordBtn.classList.add('recording');
-                    voiceRecordBtn.title = "Click to Stop and Send";
                 } catch(e) {
-                    alert('Microphone access is required to record voice notes.');
+                    alert('Microphone access is required.');
                 }
             } else {
                 mediaRecorder.stop();
                 isRecording = false;
                 voiceRecordBtn.classList.remove('recording');
-                voiceRecordBtn.title = "Record Voice Note";
             }
         };
 
@@ -450,11 +517,12 @@
             return [userA, userB].sort().join('-secret-key-2026');
         }
 
-        loginForm.addEventListener('submit', (e) => {
+        authForm.addEventListener('submit', (e) => {
             e.preventDefault();
             currentUser = usernameInput.value.trim();
             currentPassword = passwordInput.value;
-            socket.emit('login', { username: currentUser, password: currentPassword, pfp: currentPfp });
+            requestNotificationPermission();
+            socket.emit('login', { username: currentUser, password: currentPassword, pfp: currentPfp, isSignup: isSignupMode });
         });
 
         socket.on('loginResponse', (res) => {
@@ -466,14 +534,13 @@
                     myAvatarDisplay.textContent = currentPfp;
                 }
 
-                // SAVE SESSION
                 localStorage.setItem('chatz_saved_session', JSON.stringify({
                     username: currentUser,
                     password: currentPassword,
                     pfp: currentPfp
                 }));
 
-                loginScreen.classList.add('hidden');
+                authContainer.classList.add('hidden');
                 appContainer.classList.remove('hidden');
             } else {
                 alert(res.msg);
@@ -548,13 +615,10 @@
             socket.emit('loadConversation', { target, isGroup: isGroupChat });
         }
 
-        mobileBackBtn.onclick = () => {
-            chatArea.classList.remove('mobile-active');
-        };
+        mobileBackBtn.onclick = () => chatArea.classList.remove('mobile-active');
 
         messageInput.addEventListener('input', () => {
             if (!activeTarget) return;
-
             socket.emit('typing', { target: activeTarget, isGroup: isGroupChat, isTyping: true });
 
             clearTimeout(typingTimeout);
@@ -636,14 +700,22 @@
             const matchesDirect = !isGroupChat && ((data.sender === currentUser && data.recipient === activeTarget) || (data.sender === activeTarget && data.recipient === currentUser));
             const matchesGroup = isGroupChat && data.room === activeTarget;
 
-            if (matchesDirect || matchesGroup) {
-                const secret = !isGroupChat ? getSharedSecret(currentUser, activeTarget) : null;
-                data.decryptedMessage = (!isGroupChat && data.message) ? decrypt(data.message, secret) : data.message;
-                appendBubble(data);
+            const secret = !isGroupChat ? getSharedSecret(currentUser, activeTarget) : null;
+            data.decryptedMessage = (!isGroupChat && data.message) ? decrypt(data.message, secret) : data.message;
 
+            if (matchesDirect || matchesGroup) {
+                appendBubble(data);
                 if (!isGroupChat && data.sender === activeTarget) {
                     socket.emit('markAsRead', { sender: activeTarget });
                 }
+            }
+
+            // TRIGGER PUSH NOTIFICATION FOR INCOMING MESSAGES
+            if (data.sender !== currentUser) {
+                triggerPushNotification(`New message from ${data.sender}`, {
+                    body: data.decryptedMessage || 'Sent a file/attachment',
+                    icon: '💬'
+                });
             }
         });
 
@@ -662,7 +734,6 @@
                 const reactionBox = bubbleEl.querySelector('.reactions-display');
                 const parsed = JSON.parse(reactions || '{}');
                 const uniqueEmojis = [...new Set(Object.values(parsed))].join(' ');
-                
                 if (reactionBox) reactionBox.textContent = uniqueEmojis;
             }
         });
@@ -687,9 +758,7 @@
                 bodyContent += `<div class="sender-tag">${data.sender}</div>`;
             }
 
-            if (data.decryptedMessage) {
-                bodyContent += `<div>${data.decryptedMessage}</div>`;
-            }
+            if (data.decryptedMessage) bodyContent += `<div>${data.decryptedMessage}</div>`;
 
             if (data.fileData) {
                 const type = data.fileType || '';
@@ -751,7 +820,8 @@
                 target: activeTarget,
                 isGroup: isGroupChat,
                 callRoomName,
-                isAudioOnly: startWithAudioOnly
+                isAudioOnly: startWithAudioOnly,
+                senderPfp: currentPfp
             });
 
             joinJitsiRoom(callRoomName, startWithAudioOnly);
@@ -759,7 +829,7 @@
 
         function joinJitsiRoom(callRoomName, startWithAudioOnly) {
             callOverlay.classList.remove('hidden');
-            incomingCallBox.classList.add('hidden');
+            incomingCallModal.classList.add('hidden');
             jitsiContainer.innerHTML = '';
 
             const domain = 'meet.jit.si';
@@ -786,24 +856,32 @@
             };
 
             jitsiApi = new JitsiMeetExternalAPI(domain, options);
-
             const iframe = jitsiApi.getIFrame();
-            if (iframe) {
-                iframe.setAttribute('allow', 'camera; microphone; display-capture; autoplay; clipboard-write');
-            }
+            if (iframe) iframe.setAttribute('allow', 'camera; microphone; display-capture; autoplay; clipboard-write');
 
-            jitsiApi.addEventListeners({
-                videoConferenceLeft: closeCallUI
-            });
+            jitsiApi.addEventListeners({ videoConferenceLeft: closeCallUI });
         }
 
         socket.on('incomingCall', (data) => {
             currentIncomingCall = data;
-            const type = data.isAudioOnly ? 'Audio' : 'Video';
-            const fromText = data.isGroup ? `in #${data.groupName} from ${data.from}` : `from ${data.from}`;
+            const typeText = data.isAudioOnly ? 'Incoming Audio Call...' : 'Incoming Video Call...';
+            
+            callerNameDisplay.textContent = data.isGroup ? `${data.from} (#${data.groupName})` : data.from;
+            callTypeSubtitle.textContent = typeText;
 
-            incomingCallText.textContent = `Incoming ${type} Call ${fromText}`;
-            incomingCallBox.classList.remove('hidden');
+            if (data.senderPfp && data.senderPfp.startsWith('data:image')) {
+                callerAvatarDisplay.innerHTML = `<img src="${data.senderPfp}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+            } else {
+                callerAvatarDisplay.textContent = data.senderPfp || '👤';
+            }
+
+            incomingCallModal.classList.remove('hidden');
+
+            // PUSH NOTIFICATION FOR CALLS
+            triggerPushNotification(`Incoming Call from ${data.from}`, {
+                body: typeText,
+                icon: '📞'
+            });
         });
 
         acceptIncomingCallBtn.onclick = () => {
@@ -816,7 +894,7 @@
             if (currentIncomingCall && !currentIncomingCall.isGroup) {
                 socket.emit('declineCall', { to: currentIncomingCall.from });
             }
-            incomingCallBox.classList.add('hidden');
+            incomingCallModal.classList.add('hidden');
             currentIncomingCall = null;
         };
 
@@ -833,7 +911,7 @@
                 jitsiApi = null;
             }
             callOverlay.classList.add('hidden');
-            incomingCallBox.classList.add('hidden');
+            incomingCallModal.classList.add('hidden');
             jitsiContainer.innerHTML = '';
         }
 

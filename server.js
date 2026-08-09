@@ -36,23 +36,31 @@ const connectedUsers = {};
 io.on('connection', (socket) => {
 
     socket.on('login', (data) => {
-        const { username, password, pfp } = data;
+        const { username, password, pfp, isSignup } = data;
 
         db.get('SELECT * FROM users WHERE username = ?', [username], (err, row) => {
             if (err) return socket.emit('loginResponse', { success: false, msg: 'Database error!' });
 
-            if (row) {
-                if (row.password === password) {
-                    db.run('UPDATE users SET pfp = ? WHERE username = ?', [pfp, username]);
-                    completeLogin(pfp);
-                } else {
-                    socket.emit('loginResponse', { success: false, msg: 'Incorrect password!' });
+            if (isSignup) {
+                if (row) {
+                    return socket.emit('loginResponse', { success: false, msg: 'Username already taken. Please choose another or log in.' });
                 }
-            } else {
                 db.run('INSERT INTO users (username, password, pfp) VALUES (?, ?, ?)', [username, password, pfp], (err) => {
                     if (err) socket.emit('loginResponse', { success: false, msg: 'Account creation failed.' });
                     else completeLogin(pfp);
                 });
+            } else {
+                if (!row) {
+                    return socket.emit('loginResponse', { success: false, msg: 'Account not found. Please sign up first!' });
+                }
+                if (row.password === password) {
+                    if (pfp && pfp !== '👤') {
+                        db.run('UPDATE users SET pfp = ? WHERE username = ?', [pfp, username]);
+                    }
+                    completeLogin(row.pfp || pfp);
+                } else {
+                    socket.emit('loginResponse', { success: false, msg: 'Incorrect password!' });
+                }
             }
         });
 
@@ -181,14 +189,15 @@ io.on('connection', (socket) => {
         });
     });
 
-    socket.on('startCallNotification', ({ target, isGroup, callRoomName, isAudioOnly }) => {
+    socket.on('startCallNotification', ({ target, isGroup, callRoomName, isAudioOnly, senderPfp }) => {
         if (isGroup) {
             socket.to(target).emit('incomingCall', {
                 from: socket.username,
                 callRoomName,
                 isAudioOnly,
                 isGroup: true,
-                groupName: target
+                groupName: target,
+                senderPfp
             });
         } else {
             if (connectedUsers[target]) {
@@ -196,7 +205,8 @@ io.on('connection', (socket) => {
                     from: socket.username,
                     callRoomName,
                     isAudioOnly,
-                    isGroup: false
+                    isGroup: false,
+                    senderPfp
                 });
             }
         }
